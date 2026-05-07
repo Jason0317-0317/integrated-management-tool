@@ -54,7 +54,7 @@ if st.session_state.role is None:
                 st.session_state.role = "editor"
                 st.rerun()
         
-        st.markdown("<p style='text-align: center; color: #999; font-size: 12px; margin-top: 100px;'>灰光智能有限公司製作</p>", unsafe_allow_html=True)
+
 
 # ========================
 # 步驟 2: 選擇功能
