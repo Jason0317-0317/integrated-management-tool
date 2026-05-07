@@ -54,6 +54,7 @@ function updateFeatureStep() {
         const features = [
             { id: 'lesson_report', label: '預約報表統計' },
             { id: 'sales_report', label: '業績報表轉換' }
+            { id: 'attendance_report', label: '出勤明細統計' }
         ];
         features.forEach(feature => {
             const btn = document.createElement('button');
