@@ -320,7 +320,7 @@ else:
     
     # ===== 業績報表轉換 =====
     elif st.session_state.feature == "sales_report":
-        st.title("業績報表自動化轉換工具")
+        st.title("團個績計算工具")
         st.write("請上傳原始交易報表，系統將自動提取並整理為指定格式。")
         
         def get_unit_price(contract_type):
