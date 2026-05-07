@@ -144,7 +144,7 @@ function loadFunction(feature) {
             <div id="sales-result"></div>
         `;
 
-    } else if (feature === 'editor_bonus') {
+     } else if (feature === 'editor_bonus') {
         titleDiv.textContent = '業務獎金計算系統';
         contentDiv.innerHTML = `
             <h3 style="margin-top: 20px; margin-bottom: 15px;">基本資訊設定</h3>
@@ -175,7 +175,7 @@ function loadFunction(feature) {
                 </div>
             </div>
 
-            <h3 style="margin-top: 30px; margin-bottom: 15px;">1. 體驗與品牌推廣</h3>
+            <h3 style="margin-top: 40px; margin-bottom: 15px; border-top: 2px solid #e5e7eb; padding-top: 30px;">1. 體驗與品牌推廣</h3>
             <div class="form-group">
                 <label for="revenue-tier">個人業績獎金級別</label>
                 <select id="revenue-tier" onchange="updateBonusCalculation()">
@@ -263,7 +263,10 @@ function loadFunction(feature) {
         `;
 
         // 設置默認日期
-        document.getElementById('report-date').valueAsDate = new Date();
+        const reportDateInput = document.getElementById('report-date');
+        if (reportDateInput) {
+            reportDateInput.valueAsDate = new Date();
+        }
         updateBonusCalculation();
     }
 }
