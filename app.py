@@ -498,35 +498,43 @@ else:
                 
                 bold_font = Font(bold=True, name='微軟正黑體')
                 center_align = Alignment(horizontal="center", vertical="center")
-                header_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
                 thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                 
-                basic_info = [
-                    ["館別", meta_data["館別"], "", "小編姓名", meta_data["小編姓名"]],
-                    ["報表日期", meta_data["報表日期"], "", "員工身份", emp_type],
-                    ["個人業績級別", r_tier if r_tier else "不列入計算", "", "", ""],
-                    []
-                ]
-                for r_idx, row in enumerate(basic_info, 1):
-                    for c_idx, value in enumerate(row, 1):
-                        cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
-                        if value:
-                            cell.alignment = center_align
-                            if c_idx in [1, 4]:
-                                cell.font = bold_font
-                                cell.fill = header_fill
-                            cell.border = thin_border
+                # 基本資訊區塊
+                worksheet.cell(row=1, column=1, value="館別").font = bold_font
+                worksheet.cell(row=1, column=2, value=meta_data["館別"])
+                worksheet.cell(row=1, column=3, value="")
+                worksheet.cell(row=1, column=4, value="")
                 
-                matrix_header = ["項目", "數據/次數", "獎金金額", "備註"]
-                for c_idx, text in enumerate(matrix_header, 1):
-                    cell = worksheet.cell(row=6, column=c_idx, value=text)
-                    cell.font = bold_font
-                    cell.fill = header_fill
-                    cell.alignment = center_align
-                    cell.border = thin_border
+                worksheet.cell(row=2, column=1, value="報表日期").font = bold_font
+                worksheet.cell(row=2, column=2, value=meta_data["報表日期"])
+                worksheet.cell(row=2, column=3, value="")
+                worksheet.cell(row=2, column=4, value="")
                 
-                matrix_data = [
-                    ["個人業績獎金", r_tier, r_bonus, ""],
+                worksheet.cell(row=3, column=1, value="小編姓名").font = bold_font
+                worksheet.cell(row=3, column=2, value=meta_data["小編姓名"])
+                worksheet.cell(row=3, column=3, value="")
+                worksheet.cell(row=3, column=4, value="")
+                
+                worksheet.cell(row=4, column=1, value="員工身份").font = bold_font
+                worksheet.cell(row=4, column=2, value=emp_type)
+                worksheet.cell(row=4, column=3, value="")
+                worksheet.cell(row=4, column=4, value="")
+                
+                # 空行
+                worksheet.cell(row=5, column=1, value="")
+                worksheet.cell(row=6, column=1, value="")
+                
+                # 報表表頭
+                header_row = 7
+                worksheet.cell(row=header_row, column=1, value="項目").font = bold_font
+                worksheet.cell(row=header_row, column=2, value="筆數").font = bold_font
+                worksheet.cell(row=header_row, column=3, value="獎金金額").font = bold_font
+                worksheet.cell(row=header_row, column=4, value="備註").font = bold_font
+                
+                # 報表資料
+                data_rows = [
+                    ["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""],
                     ["體驗成交", sum(deal_dict.values()), d_bonus, ""],
                     ["補位獎金", classes, classes * 30, ""],
                     ["回流獎金", sum(loyalty_dict.values()), l_bonus, ""],
@@ -536,16 +544,19 @@ else:
                     ["總計", "", result, ""]
                 ]
                 
-                for r_idx, row_data in enumerate(matrix_data, 7):
+                for r_idx, row_data in enumerate(data_rows, header_row + 1):
                     for c_idx, value in enumerate(row_data, 1):
                         cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
                         cell.alignment = center_align
                         cell.border = thin_border
-                        if r_idx == 7 + len(matrix_data) - 1:
+                        if r_idx == header_row + len(data_rows):
                             cell.font = bold_font
                 
-                for i in range(1, 5):
-                    worksheet.column_dimensions[get_column_letter(i)].width = 20
+                # 調整欄寬
+                worksheet.column_dimensions['A'].width = 15
+                worksheet.column_dimensions['B'].width = 15
+                worksheet.column_dimensions['C'].width = 15
+                worksheet.column_dimensions['D'].width = 20
             
             return output.getvalue()
         
