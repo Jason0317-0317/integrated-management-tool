@@ -572,7 +572,14 @@ else:
             name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
         
         with col3:
-            date = st.date_input("報表日期", key="date_input")
+            date_range = st.date_input("報表日期", key="date_input")
+            if isinstance(date_range, tuple) and len(date_range) == 2:
+                start_date, end_date = date_range
+                date_str = f"{start_date} 至 {end_date}"
+            elif date_range:
+                date_str = str(date_range)
+            else:
+                date_str = ""
         
         with col4:
             is_ft = st.selectbox("員工身份", ["正職", "兼職"], key="employment_select") == "正職"
@@ -638,14 +645,6 @@ else:
             if not name or name.strip() == "":
                 st.error("請輸入小編姓名")
             else:
-                if isinstance(date_range, tuple) and len(date_range) == 2:
-                    start_date, end_date = date_range
-                    date_str = f"{start_date} 至 {end_date}"
-                elif date_range:
-                    date_str = str(date_range)
-                else:
-                    date_str = ""
-                
                 meta = {"館別": gym, "小編姓名": name, "報表日期": date_str}
                 excel_file = generate_matrix_excel(
                     meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
