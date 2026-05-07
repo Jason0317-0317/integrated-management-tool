@@ -9,7 +9,7 @@ import numpy as np
 # ========================
 # 頁面設定
 # ========================
-st.set_page_config(page_title="整合管理工具", layout="wide")
+st.set_page_config(page_title="春不老薪資計算系統", layout="wide")
 
 # ========================
 # Session State 初始化
@@ -20,25 +20,14 @@ if "feature" not in st.session_state:
     st.session_state.feature = None
 
 # ========================
-# 步驟 1: 選擇身份
+# 步驟 1: 身份選擇
 # ========================
 if st.session_state.role is None:
-    st.markdown("""
-    <style>
-    .main-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("<h1 style='text-align: center; margin-top: 100px;'>春不老薪資計算系統</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #999; font-size: 16px;'>請選擇您的角色登入系統</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>春不老薪資計算系統</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #999;'>請選擇您的角色登入系統</p>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -53,17 +42,14 @@ if st.session_state.role is None:
             if st.button("小編登入", key="editor_btn", use_container_width=True):
                 st.session_state.role = "editor"
                 st.rerun()
-        
-
 
 # ========================
-# 步驟 2: 選擇功能
+# 步驟 2: 功能選擇
 # ========================
 elif st.session_state.feature is None:
-    # 頂部返回按鈕
     col_back, col_title = st.columns([1, 10])
     with col_back:
-        if st.button("返回", key="back_to_role"):
+        if st.button("返回"):
             st.session_state.role = None
             st.session_state.feature = None
             st.rerun()
@@ -72,8 +58,8 @@ elif st.session_state.feature is None:
     
     with col2:
         if st.session_state.role == "manager":
-            st.markdown("<h1 style='text-align: center; margin-top: 50px;'>店長功能選擇</h1>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: #999; font-size: 16px;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
+            st.markdown("<h1 style='text-align: center;'>店長功能選擇</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
             
@@ -90,8 +76,8 @@ elif st.session_state.feature is None:
                     st.rerun()
         
         else:  # editor
-            st.markdown("<h1 style='text-align: center; margin-top: 50px;'>小編功能選擇</h1>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: #999; font-size: 16px;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
+            st.markdown("<h1 style='text-align: center;'>小編功能選擇</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
             
@@ -103,10 +89,9 @@ elif st.session_state.feature is None:
 # 步驟 3: 顯示功能
 # ========================
 else:
-    # 頂部導航
     col_back, col_title, col_empty = st.columns([1, 10, 1])
     with col_back:
-        if st.button("返回", key="back_to_feature"):
+        if st.button("返回"):
             st.session_state.feature = None
             st.rerun()
     
@@ -564,21 +549,33 @@ else:
             
             return output.getvalue()
         
-        # 側邊欄設定
-        with st.sidebar:
-            st.header("基本資訊設定")
-            gym = st.selectbox("館別", ["巨蛋館", "其他分館"])
-            name = st.text_input("小編姓名", "請輸入姓名")
-            date = st.date_input("報表日期")
-            is_ft = st.toggle("正職身份", value=True)
+        # 基本資訊設定 - 全部在主頁面
+        st.markdown("### 基本資訊設定")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            gym = st.selectbox("館別", ["巨蛋館", "其他分館"], key="gym_select")
+        
+        with col2:
+            name = st.text_input("小編姓名", "請輸入姓名", key="name_input")
+        
+        with col3:
+            date = st.date_input("報表日期", key="date_input")
+        
+        with col4:
+            is_ft = st.selectbox("員工身份", ["正職", "兼職"], key="employment_select") == "正職"
+        
+        st.divider()
         
         # 1. 體驗與品牌推廣區塊
-        st.header("1. 體驗與品牌推廣")
+        st.markdown("### 1. 體驗與品牌推廣")
         
         # 個人業績選擇
         revenue_tier = st.selectbox(
             "個人業績獎金級別", 
-            ["不列入計算", "12萬元", "24萬元", "30萬元"]
+            ["不列入計算", "12萬元", "24萬元", "30萬元"],
+            key="revenue_tier_select"
         )
         
         st.divider()
@@ -586,32 +583,32 @@ else:
         col_a, col_b = st.columns(2)
         
         with col_a:
-            d_today = st.number_input("當天成交(筆)", min_value=0, value=0)
-            d_48h = st.number_input("48小時(筆)", min_value=0, value=0)
-            d_7d = st.number_input("7天內(筆)", min_value=0, value=0)
-            d_over7 = st.number_input("超過7天(筆)", min_value=0, value=0)
+            d_today = st.number_input("當天成交(筆)", min_value=0, value=0, key="deal_today")
+            d_48h = st.number_input("48小時(筆)", min_value=0, value=0, key="deal_48h")
+            d_7d = st.number_input("7天內(筆)", min_value=0, value=0, key="deal_7d")
+            d_over7 = st.number_input("超過7天(筆)", min_value=0, value=0, key="deal_over7")
             deal_dict = {"當天": d_today, "48小時": d_48h, "7天內": d_7d, "超過7天": d_over7}
         
         with col_b:
-            brand_input = st.number_input("品牌推廣人數", min_value=0, value=5)
-            extra_cls = st.number_input("補開課程次數", min_value=0, value=0)
+            brand_input = st.number_input("品牌推廣人數", min_value=0, value=5, key="brand_input")
+            extra_cls = st.number_input("補開課程次數", min_value=0, value=0, key="extra_cls")
         
-        st.header("2. 回流與升級項目")
+        st.markdown("### 2. 回流與升級項目")
         col_c, col_d = st.columns(2)
         
         with col_c:
             st.write("回流人數 (STP-T)")
-            l_10 = st.number_input("10堂人數", min_value=0, value=0)
-            l_20 = st.number_input("20堂人數", min_value=0, value=0)
-            l_30 = st.number_input("30堂人數", min_value=0, value=0)
-            l_40 = st.number_input("40堂人數", min_value=0, value=0)
+            l_10 = st.number_input("10堂人數", min_value=0, value=0, key="loyalty_10")
+            l_20 = st.number_input("20堂人數", min_value=0, value=0, key="loyalty_20")
+            l_30 = st.number_input("30堂人數", min_value=0, value=0, key="loyalty_30")
+            l_40 = st.number_input("40堂人數", min_value=0, value=0, key="loyalty_40")
             loyalty_dict = {"10堂": l_10, "20堂": l_20, "30堂": l_30, "40堂": l_40}
         
         with col_d:
             st.write("結構升級次數")
-            u_12_13 = st.number_input("1對2變1對3(次)", min_value=0, value=0)
-            u_group = st.number_input("團課變期班(次)", min_value=0, value=0)
-            u_class = st.number_input("包班成立(次)", min_value=0, value=0)
+            u_12_13 = st.number_input("1對2變1對3(次)", min_value=0, value=0, key="upgrade_1213")
+            u_group = st.number_input("團課變期班(次)", min_value=0, value=0, key="upgrade_group")
+            u_class = st.number_input("包班成立(次)", min_value=0, value=0, key="upgrade_class")
             upgrade_dict = {"1對2變1對3": u_12_13, "團課變期班": u_group, "包班成立": u_class}
         
         # 計算結果
