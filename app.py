@@ -9,7 +9,7 @@ import numpy as np
 # ========================
 # 頁面設定
 # ========================
-st.set_page_config(page_title="整合管理工具", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="整合管理工具", layout="wide")
 
 # ========================
 # 側邊欄 - 入口選擇
