@@ -601,7 +601,7 @@ else:
             deal_dict = {"當天": d_today, "48小時": d_48h, "7天內": d_7d, "超過7天": d_over7}
         
         with col_b:
-            brand_input = st.number_input("品牌推廣人數", min_value=0, value=5, key="brand_input")
+            brand_input = st.number_input("品牌推廣人數", min_value=0, value=0, key="brand_input")
             extra_cls = st.number_input("補開課程次數", min_value=0, value=0, key="extra_cls")
         
         st.markdown("### 2. 回流與升級項目")
