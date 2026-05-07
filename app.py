@@ -12,36 +12,107 @@ import numpy as np
 st.set_page_config(page_title="整合管理工具", layout="wide")
 
 # ========================
-# 側邊欄 - 入口選擇
+# Session State 初始化
 # ========================
-st.sidebar.title("🎯 功能入口")
-st.sidebar.markdown("---")
-
-role = st.sidebar.radio(
-    "選擇您的身份",
-    ["店長用", "小編用"],
-    help="選擇您要使用的功能模組"
-)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-### 📋 功能說明
-- **店長用**: 預約報表統計 + 業績報表轉換
-- **小編用**: 業務獎金計算系統
-""")
+if "role" not in st.session_state:
+    st.session_state.role = None
+if "feature" not in st.session_state:
+    st.session_state.feature = None
 
 # ========================
-# 店長用 - 預約報表統計 + 業績報表轉換
+# 步驟 1: 選擇身份
 # ========================
-if role == "店長用":
-    st.title("🏪 店長用 - 報表管理系統")
+if st.session_state.role is None:
+    st.markdown("""
+    <style>
+    .main-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # 子功能選擇
-    tab1, tab2 = st.tabs(["📊 預約報表統計", "💰 業績報表轉換"])
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    # ===== TAB 1: 預約報表統計 =====
-    with tab1:
-        st.header("預約報表自動統計系統")
+    with col2:
+        st.markdown("<h1 style='text-align: center; margin-top: 100px;'>春不老薪資計算系統</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #999; font-size: 16px;'>請選擇您的角色登入系統</p>", unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            if st.button("店長登入", key="manager_btn", use_container_width=True):
+                st.session_state.role = "manager"
+                st.rerun()
+        
+        with col_btn2:
+            if st.button("小編登入", key="editor_btn", use_container_width=True):
+                st.session_state.role = "editor"
+                st.rerun()
+        
+        st.markdown("<p style='text-align: center; color: #999; font-size: 12px; margin-top: 100px;'>灰光智能有限公司製作</p>", unsafe_allow_html=True)
+
+# ========================
+# 步驟 2: 選擇功能
+# ========================
+elif st.session_state.feature is None:
+    # 頂部返回按鈕
+    col_back, col_title = st.columns([1, 10])
+    with col_back:
+        if st.button("返回", key="back_to_role"):
+            st.session_state.role = None
+            st.session_state.feature = None
+            st.rerun()
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        if st.session_state.role == "manager":
+            st.markdown("<h1 style='text-align: center; margin-top: 50px;'>店長功能選擇</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #999; font-size: 16px;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col_f1, col_f2 = st.columns(2)
+            
+            with col_f1:
+                if st.button("預約報表統計", key="lesson_report", use_container_width=True):
+                    st.session_state.feature = "lesson_report"
+                    st.rerun()
+            
+            with col_f2:
+                if st.button("業績報表轉換", key="sales_report", use_container_width=True):
+                    st.session_state.feature = "sales_report"
+                    st.rerun()
+        
+        else:  # editor
+            st.markdown("<h1 style='text-align: center; margin-top: 50px;'>小編功能選擇</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #999; font-size: 16px;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            if st.button("業務獎金計算", key="editor_bonus", use_container_width=True):
+                st.session_state.feature = "editor_bonus"
+                st.rerun()
+
+# ========================
+# 步驟 3: 顯示功能
+# ========================
+else:
+    # 頂部導航
+    col_back, col_title, col_empty = st.columns([1, 10, 1])
+    with col_back:
+        if st.button("返回", key="back_to_feature"):
+            st.session_state.feature = None
+            st.rerun()
+    
+    # ===== 預約報表統計 =====
+    if st.session_state.feature == "lesson_report":
+        st.title("預約報表自動統計系統")
         st.markdown("此版本會將 **課程項目顯示於直排**，**老師姓名顯示於橫排**。")
         
         # 1. 定義老師排序順序與轉換字典
@@ -262,9 +333,9 @@ if role == "店長用":
                 st.error(f"處理失敗: {e}")
                 st.exception(e)
     
-    # ===== TAB 2: 業績報表轉換 =====
-    with tab2:
-        st.header("業績報表自動化轉換工具")
+    # ===== 業績報表轉換 =====
+    elif st.session_state.feature == "sales_report":
+        st.title("業績報表自動化轉換工具")
         st.write("請上傳原始交易報表，系統將自動提取並整理為指定格式。")
         
         def get_unit_price(contract_type):
@@ -358,215 +429,213 @@ if role == "店長用":
                 st.error("找不到符合條件的資料")
         else:
             st.write("請上傳檔案以開始處理。")
-
-# ========================
-# 小編用 - 業務獎金計算系統
-# ========================
-else:  # role == "小編用"
-    st.title("✏️ 小編用 - 業務獎金計算系統")
     
-    # 計算函式
-    def calculate_bonus(deal_counts, extra_classes, loyalty_counts, upgrade_counts, is_full_time, brand_count, personal_revenue_tier=None):
-        """
-        personal_revenue_tier 選項: None, "12萬元", "24萬元", "30萬元"
-        """
+    # ===== 業務獎金計算 =====
+    elif st.session_state.feature == "editor_bonus":
+        st.title("業務獎金計算系統")
         
-        # 1. 個人業績獎金
-        revenue_bonus_map = {
-            None: 0,
-            "不列入計算": 0,
-            "12萬元": 2000,
-            "24萬元": 4000,
-            "30萬元": 6000
-        }
-        r_total = revenue_bonus_map.get(personal_revenue_tier, 0)
-        
-        # 2. 體驗成交獎金
-        d_total = (deal_counts.get("當天", 0) * 80 + 
-                   deal_counts.get("48小時", 0) * 60 + 
-                   deal_counts.get("7天內", 0) * 50 +
-                   deal_counts.get("超過7天", 0) * 0)
-        
-        # 3. 補位獎金
-        c_total = extra_classes * 30
-        
-        # 4. 回流獎勵獎金 (STP-T)
-        l_total = (loyalty_counts.get("10堂", 0) * 100 + 
-                   loyalty_counts.get("20堂", 0) * 200 + 
-                   loyalty_counts.get("30堂", 0) * 300 + 
-                   loyalty_counts.get("40堂", 0) * 500)
-        
-        # 5. 結構升級獎金
-        upgrade_prices = {"1對2變1對3": 100, "團課變期班": 150, "包班成立": 300}
-        u_total = sum(upgrade_prices.get(name, 0) * count for name, count in upgrade_counts.items())
-        
-        # 6. 品牌知名度獎金
-        base_val = 5 if is_full_time else 2
-        b_note = ""
-        if brand_count == 0:
-            b_total = -200
-            b_note = "推廣人數為 0"
-        elif brand_count < base_val:
-            b_total = -100
-            b_note = f"未達門檻 ({base_val}位)"
-        elif brand_count == base_val:
-            b_total = 0
-            b_note = "符合基本門檻"
-        else:
-            extra_units = (brand_count - base_val) // 5
-            b_total = extra_units * 200
-            b_note = f"加發 {extra_units} 組獎金"
-        
-        # 7. 月轉換高手筆數累計
-        total_deals = (sum(deal_counts.values()) + 
-                       sum(upgrade_counts.values()) + 
-                       sum(loyalty_counts.values()) + 
-                       extra_classes)
-        
-        if total_deals >= 50:
-            monthly_bonus = 5000
-        elif total_deals >= 30:
-            monthly_bonus = 2000
-        else:
-            monthly_bonus = 0
+        # 計算函式
+        def calculate_bonus(deal_counts, extra_classes, loyalty_counts, upgrade_counts, is_full_time, brand_count, personal_revenue_tier=None):
+            """
+            personal_revenue_tier 選項: None, "12萬元", "24萬元", "30萬元"
+            """
             
-        final_total = d_total + c_total + l_total + u_total + monthly_bonus + b_total + r_total
+            # 1. 個人業績獎金
+            revenue_bonus_map = {
+                None: 0,
+                "不列入計算": 0,
+                "12萬元": 2000,
+                "24萬元": 4000,
+                "30萬元": 6000
+            }
+            r_total = revenue_bonus_map.get(personal_revenue_tier, 0)
+            
+            # 2. 體驗成交獎金
+            d_total = (deal_counts.get("當天", 0) * 80 + 
+                       deal_counts.get("48小時", 0) * 60 + 
+                       deal_counts.get("7天內", 0) * 50 +
+                       deal_counts.get("超過7天", 0) * 0)
+            
+            # 3. 補位獎金
+            c_total = extra_classes * 30
+            
+            # 4. 回流獎勵獎金 (STP-T)
+            l_total = (loyalty_counts.get("10堂", 0) * 100 + 
+                       loyalty_counts.get("20堂", 0) * 200 + 
+                       loyalty_counts.get("30堂", 0) * 300 + 
+                       loyalty_counts.get("40堂", 0) * 500)
+            
+            # 5. 結構升級獎金
+            upgrade_prices = {"1對2變1對3": 100, "團課變期班": 150, "包班成立": 300}
+            u_total = sum(upgrade_prices.get(name, 0) * count for name, count in upgrade_counts.items())
+            
+            # 6. 品牌知名度獎金
+            base_val = 5 if is_full_time else 2
+            b_note = ""
+            if brand_count == 0:
+                b_total = -200
+                b_note = "推廣人數為 0"
+            elif brand_count < base_val:
+                b_total = -100
+                b_note = f"未達門檻 ({base_val}位)"
+            elif brand_count == base_val:
+                b_total = 0
+                b_note = "符合基本門檻"
+            else:
+                extra_units = (brand_count - base_val) // 5
+                b_total = extra_units * 200
+                b_note = f"加發 {extra_units} 組獎金"
+            
+            # 7. 月轉換高手筆數累計
+            total_deals = (sum(deal_counts.values()) + 
+                           sum(upgrade_counts.values()) + 
+                           sum(loyalty_counts.values()) + 
+                           extra_classes)
+            
+            if total_deals >= 50:
+                monthly_bonus = 5000
+            elif total_deals >= 30:
+                monthly_bonus = 2000
+            else:
+                monthly_bonus = 0
+                
+            final_total = d_total + c_total + l_total + u_total + monthly_bonus + b_total + r_total
+            
+            return final_total, total_deals, monthly_bonus, l_total, d_total, u_total, b_total, b_note, r_total
         
-        return final_total, total_deals, monthly_bonus, l_total, d_total, u_total, b_total, b_note, r_total
-    
-    # 產生 Excel 報表
-    def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier):
-        output = io.BytesIO()
-        
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            workbook = writer.book
-            worksheet = workbook.create_sheet('獎金結算', 0)
+        # 產生 Excel 報表
+        def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier):
+            output = io.BytesIO()
             
-            bold_font = Font(bold=True, name='微軟正黑體')
-            center_align = Alignment(horizontal="center", vertical="center")
-            header_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
-            thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-            
-            basic_info = [
-                ["館別", meta_data["館別"], "", "小編姓名", meta_data["小編姓名"]],
-                ["報表日期", meta_data["報表日期"], "", "員工身份", emp_type],
-                ["個人業績級別", r_tier if r_tier else "不列入計算", "", "", ""],
-                []
-            ]
-            for r_idx, row in enumerate(basic_info, 1):
-                for c_idx, value in enumerate(row, 1):
-                    cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
-                    if value:
-                        cell.alignment = center_align
-                        if c_idx in [1, 4]:
-                            cell.font = bold_font
-                            cell.fill = header_fill
-                        cell.border = thin_border
-            
-            matrix_header = ["項目", "數據/次數", "獎金金額", "備註"]
-            for c_idx, text in enumerate(matrix_header, 1):
-                cell = worksheet.cell(row=6, column=c_idx, value=text)
-                cell.font = bold_font
-                cell.fill = header_fill
-                cell.alignment = center_align
-                cell.border = thin_border
-            
-            matrix_data = [
-                ["個人業績獎金", r_tier, r_bonus, ""],
-                ["體驗成交", sum(deal_dict.values()), d_bonus, ""],
-                ["補位獎金", classes, classes * 30, ""],
-                ["回流獎金", sum(loyalty_dict.values()), l_bonus, ""],
-                ["結構升級獎金", sum(upgrade_counts.values()), u_bonus, ""],
-                ["品牌知名度獎金", b_count, b_bonus, b_note],
-                ["月高手獎勵", total_v, m_bonus, f"總轉換筆數: {total_v}"],
-                ["總計", "", result, ""]
-            ]
-            
-            for r_idx, row_data in enumerate(matrix_data, 7):
-                for c_idx, value in enumerate(row_data, 1):
-                    cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                workbook = writer.book
+                worksheet = workbook.create_sheet('獎金結算', 0)
+                
+                bold_font = Font(bold=True, name='微軟正黑體')
+                center_align = Alignment(horizontal="center", vertical="center")
+                header_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+                thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+                
+                basic_info = [
+                    ["館別", meta_data["館別"], "", "小編姓名", meta_data["小編姓名"]],
+                    ["報表日期", meta_data["報表日期"], "", "員工身份", emp_type],
+                    ["個人業績級別", r_tier if r_tier else "不列入計算", "", "", ""],
+                    []
+                ]
+                for r_idx, row in enumerate(basic_info, 1):
+                    for c_idx, value in enumerate(row, 1):
+                        cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+                        if value:
+                            cell.alignment = center_align
+                            if c_idx in [1, 4]:
+                                cell.font = bold_font
+                                cell.fill = header_fill
+                            cell.border = thin_border
+                
+                matrix_header = ["項目", "數據/次數", "獎金金額", "備註"]
+                for c_idx, text in enumerate(matrix_header, 1):
+                    cell = worksheet.cell(row=6, column=c_idx, value=text)
+                    cell.font = bold_font
+                    cell.fill = header_fill
                     cell.alignment = center_align
                     cell.border = thin_border
-                    if r_idx == 7 + len(matrix_data) - 1:
-                        cell.font = bold_font
+                
+                matrix_data = [
+                    ["個人業績獎金", r_tier, r_bonus, ""],
+                    ["體驗成交", sum(deal_dict.values()), d_bonus, ""],
+                    ["補位獎金", classes, classes * 30, ""],
+                    ["回流獎金", sum(loyalty_dict.values()), l_bonus, ""],
+                    ["結構升級獎金", sum(upgrade_counts.values()), u_bonus, ""],
+                    ["品牌知名度獎金", b_count, b_bonus, b_note],
+                    ["月高手獎勵", total_v, m_bonus, f"總轉換筆數: {total_v}"],
+                    ["總計", "", result, ""]
+                ]
+                
+                for r_idx, row_data in enumerate(matrix_data, 7):
+                    for c_idx, value in enumerate(row_data, 1):
+                        cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+                        cell.alignment = center_align
+                        cell.border = thin_border
+                        if r_idx == 7 + len(matrix_data) - 1:
+                            cell.font = bold_font
+                
+                for i in range(1, 5):
+                    worksheet.column_dimensions[get_column_letter(i)].width = 20
             
-            for i in range(1, 5):
-                worksheet.column_dimensions[get_column_letter(i)].width = 20
+            return output.getvalue()
         
-        return output.getvalue()
-    
-    # 側邊欄設定
-    with st.sidebar:
-        st.header("基本資訊設定")
-        gym = st.selectbox("館別", ["巨蛋館", "其他分館"])
-        name = st.text_input("小編姓名", "請輸入姓名")
-        date = st.date_input("報表日期")
-        is_ft = st.toggle("正職身份", value=True)
-    
-    # 1. 體驗與品牌推廣區塊
-    st.header("1. 體驗與品牌推廣")
-    
-    # 個人業績選擇
-    revenue_tier = st.selectbox(
-        "個人業績獎金級別", 
-        ["不列入計算", "12萬元", "24萬元", "30萬元"]
-    )
-    
-    st.divider()
-    
-    col_a, col_b = st.columns(2)
-    
-    with col_a:
-        d_today = st.number_input("當天成交(筆)", min_value=0, value=0)
-        d_48h = st.number_input("48小時(筆)", min_value=0, value=0)
-        d_7d = st.number_input("7天內(筆)", min_value=0, value=0)
-        d_over7 = st.number_input("超過7天(筆)", min_value=0, value=0)
-        deal_dict = {"當天": d_today, "48小時": d_48h, "7天內": d_7d, "超過7天": d_over7}
-    
-    with col_b:
-        brand_input = st.number_input("品牌推廣人數", min_value=0, value=5)
-        extra_cls = st.number_input("補開課程次數", min_value=0, value=0)
-    
-    st.header("2. 回流與升級項目")
-    col_c, col_d = st.columns(2)
-    
-    with col_c:
-        st.write("回流人數 (STP-T)")
-        l_10 = st.number_input("10堂人數", min_value=0, value=0)
-        l_20 = st.number_input("20堂人數", min_value=0, value=0)
-        l_30 = st.number_input("30堂人數", min_value=0, value=0)
-        l_40 = st.number_input("40堂人數", min_value=0, value=0)
-        loyalty_dict = {"10堂": l_10, "20堂": l_20, "30堂": l_30, "40堂": l_40}
-    
-    with col_d:
-        st.write("結構升級次數")
-        u_12_13 = st.number_input("1對2變1對3(次)", min_value=0, value=0)
-        u_group = st.number_input("團課變期班(次)", min_value=0, value=0)
-        u_class = st.number_input("包班成立(次)", min_value=0, value=0)
-        upgrade_dict = {"1對2變1對3": u_12_13, "團課變期班": u_group, "包班成立": u_class}
-    
-    # 計算結果
-    res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, is_ft, brand_input, revenue_tier)
-    
-    st.divider()
-    main_col1, main_col2 = st.columns(2)
-    with main_col1:
-        st.metric("當月預計總獎金", f"{res[0]} 元")
-    with main_col2:
-        if revenue_tier != "不列入計算":
-            st.info(f"包含個人業績獎金 ({revenue_tier}): {res[8]} 元")
-    
-    # 匯出按鈕
-    if st.button("產生並下載結算報表"):
-        meta = {"館別": gym, "小編姓名": name, "報表日期": str(date)}
-        excel_file = generate_matrix_excel(
-            meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
-            res[4], res[3], res[5], res[2], res[6], res[7], 
-            "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier
+        # 側邊欄設定
+        with st.sidebar:
+            st.header("基本資訊設定")
+            gym = st.selectbox("館別", ["巨蛋館", "其他分館"])
+            name = st.text_input("小編姓名", "請輸入姓名")
+            date = st.date_input("報表日期")
+            is_ft = st.toggle("正職身份", value=True)
+        
+        # 1. 體驗與品牌推廣區塊
+        st.header("1. 體驗與品牌推廣")
+        
+        # 個人業績選擇
+        revenue_tier = st.selectbox(
+            "個人業績獎金級別", 
+            ["不列入計算", "12萬元", "24萬元", "30萬元"]
         )
-        st.download_button(
-            label="點我儲存 Excel 檔案",
-            data=excel_file,
-            file_name=f"{name}_獎金結算_{date}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        
+        st.divider()
+        
+        col_a, col_b = st.columns(2)
+        
+        with col_a:
+            d_today = st.number_input("當天成交(筆)", min_value=0, value=0)
+            d_48h = st.number_input("48小時(筆)", min_value=0, value=0)
+            d_7d = st.number_input("7天內(筆)", min_value=0, value=0)
+            d_over7 = st.number_input("超過7天(筆)", min_value=0, value=0)
+            deal_dict = {"當天": d_today, "48小時": d_48h, "7天內": d_7d, "超過7天": d_over7}
+        
+        with col_b:
+            brand_input = st.number_input("品牌推廣人數", min_value=0, value=5)
+            extra_cls = st.number_input("補開課程次數", min_value=0, value=0)
+        
+        st.header("2. 回流與升級項目")
+        col_c, col_d = st.columns(2)
+        
+        with col_c:
+            st.write("回流人數 (STP-T)")
+            l_10 = st.number_input("10堂人數", min_value=0, value=0)
+            l_20 = st.number_input("20堂人數", min_value=0, value=0)
+            l_30 = st.number_input("30堂人數", min_value=0, value=0)
+            l_40 = st.number_input("40堂人數", min_value=0, value=0)
+            loyalty_dict = {"10堂": l_10, "20堂": l_20, "30堂": l_30, "40堂": l_40}
+        
+        with col_d:
+            st.write("結構升級次數")
+            u_12_13 = st.number_input("1對2變1對3(次)", min_value=0, value=0)
+            u_group = st.number_input("團課變期班(次)", min_value=0, value=0)
+            u_class = st.number_input("包班成立(次)", min_value=0, value=0)
+            upgrade_dict = {"1對2變1對3": u_12_13, "團課變期班": u_group, "包班成立": u_class}
+        
+        # 計算結果
+        res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, is_ft, brand_input, revenue_tier)
+        
+        st.divider()
+        main_col1, main_col2 = st.columns(2)
+        with main_col1:
+            st.metric("當月預計總獎金", f"{res[0]} 元")
+        with main_col2:
+            if revenue_tier != "不列入計算":
+                st.info(f"包含個人業績獎金 ({revenue_tier}): {res[8]} 元")
+        
+        # 匯出按鈕
+        if st.button("產生並下載結算報表"):
+            meta = {"館別": gym, "小編姓名": name, "報表日期": str(date)}
+            excel_file = generate_matrix_excel(
+                meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
+                res[4], res[3], res[5], res[2], res[6], res[7], 
+                "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier
+            )
+            st.download_button(
+                label="點我儲存 Excel 檔案",
+                data=excel_file,
+                file_name=f"{name}_獎金結算_{date}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
