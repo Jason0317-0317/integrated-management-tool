@@ -555,10 +555,10 @@ else:
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            gym = st.selectbox("館別", ["巨蛋館", "其他分館"], key="gym_select")
+            gym = st.selectbox("館別", ["義昌館", "高美館", "中山館", "巨蛋館"], key="gym_select")
         
         with col2:
-            name = st.text_input("小編姓名", "請輸入姓名", key="name_input")
+            name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
         
         with col3:
             date = st.date_input("報表日期", key="date_input")
@@ -624,15 +624,18 @@ else:
         
         # 匯出按鈕
         if st.button("產生並下載結算報表"):
-            meta = {"館別": gym, "小編姓名": name, "報表日期": str(date)}
-            excel_file = generate_matrix_excel(
-                meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
-                res[4], res[3], res[5], res[2], res[6], res[7], 
-                "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier
-            )
-            st.download_button(
-                label="點我儲存 Excel 檔案",
-                data=excel_file,
-                file_name=f"{name}_獎金結算_{date}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            if not name or name.strip() == "":
+                st.error("請輸入小編姓名")
+            else:
+                meta = {"館別": gym, "小編姓名": name, "報表日期": str(date)}
+                excel_file = generate_matrix_excel(
+                    meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
+                    res[4], res[3], res[5], res[2], res[6], res[7], 
+                    "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier
+                )
+                st.download_button(
+                    label="點我儲存 Excel 檔案",
+                    data=excel_file,
+                    file_name=f"{name}_獎金結算_{date}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
