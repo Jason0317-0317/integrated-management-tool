@@ -160,8 +160,6 @@ function loadFunction(feature) {
                     <label for="editor-name">小編姓名</label>
                     <input type="text" id="editor-name" placeholder="請輸入姓名">
                 </div>
-            </div>
-            <div class="form-row">
                 <div class="form-group">
                     <label for="report-date">報表日期</label>
                     <input type="date" id="report-date">
