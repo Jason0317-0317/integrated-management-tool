@@ -81,7 +81,7 @@ function loadFunction(feature) {
         titleDiv.textContent = '預約報表自動統計系統';
         contentDiv.innerHTML = `
             <div class="form-group">
-                <p style="color: #666; margin-bottom: 20px;">此版本會將 <strong>課程項目顯示於直排</strong>，<strong>老師姓名顯示於橫排</strong>。</p>
+                <p style="color: #666; margin-bottom: 20px;">請上傳原始團體課預約報表，系統將自動提取並整理為指定格式。</p>
             </div>
 
             <h3 style="margin-top: 30px; margin-bottom: 15px;">1. 設定篩選條件</h3>
