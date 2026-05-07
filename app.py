@@ -66,12 +66,12 @@ elif st.session_state.feature is None:
             col_f1, col_f2 = st.columns(2)
             
             with col_f1:
-                if st.button("預約報表統計", key="lesson_report", use_container_width=True):
+                if st.button("教練堰數統計", key="lesson_report", use_container_width=True):
                     st.session_state.feature = "lesson_report"
                     st.rerun()
             
             with col_f2:
-                if st.button("業績報表轉換", key="sales_report", use_container_width=True):
+                if st.button("團個績計算工具", key="sales_report", use_container_width=True):
                     st.session_state.feature = "sales_report"
                     st.rerun()
         
@@ -97,7 +97,7 @@ else:
     
     # ===== 預約報表統計 =====
     if st.session_state.feature == "lesson_report":
-        st.title("預約報表自動統計系統")
+        st.title("教練堰數統計")
         st.markdown("此版本會將 **課程項目顯示於直排**，**老師姓名顯示於橫排**。")
         
         # 1. 定義老師排序順序與轉換字典
