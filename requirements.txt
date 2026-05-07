@@ -1,5 +1,7 @@
-streamlit
+flask
+flask-cors
 pandas
 openpyxl
 xlsxwriter
 numpy
+python-dotenv
