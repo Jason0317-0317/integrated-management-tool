@@ -638,7 +638,15 @@ else:
             if not name or name.strip() == "":
                 st.error("請輸入小編姓名")
             else:
-                meta = {"館別": gym, "小編姓名": name, "報表日期": str(date)}
+                if isinstance(date_range, tuple) and len(date_range) == 2:
+                    start_date, end_date = date_range
+                    date_str = f"{start_date} 至 {end_date}"
+                elif date_range:
+                    date_str = str(date_range)
+                else:
+                    date_str = ""
+                
+                meta = {"館別": gym, "小編姓名": name, "報表日期": date_str}
                 excel_file = generate_matrix_excel(
                     meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
                     res[4], res[3], res[5], res[2], res[6], res[7], 
