@@ -343,9 +343,10 @@ else:
             
             # 建立基礎資料
             df_base = pd.DataFrame()
+            df_base["合約建立日期"] = df_raw["交易日期"]
             df_base["業績人員"] = df_raw["銷售人員"]
             df_base["會員姓名"] = df_raw["會員姓名"]
-            df_base["開課日期"] = df_raw["交易日期"]
+            df_base["開課日期"] = np.nan
             df_base["合約類型"] = df_raw["票券/商品種類"]
             df_base["堂數"] = pd.to_numeric(df_raw["數量"], errors='coerce').fillna(0)
             
@@ -375,7 +376,12 @@ else:
             df_base["業績獎金"] = (df_base["金額(未稅)"] * bonus_rate).round(0)
             
             df_base["備註"] = df_raw["備註"].astype(str).replace('nan', '')
-            
+            target_columns = [
+            "合約建立日期", "業績人員", "會員姓名", "開課日期", "合約類型", 
+            "堂數", "合約總價", "金額(未稅)", "銷售折數", "活動", 
+            "業績計算", "業績獎金", "購買合約原價", "備註"
+            ]
+            df_base = df_base[target_columns]
             # 分類
             df_new = df_base[df_base["備註"].str.contains("新購|首購")].copy()
             df_renew = df_base[df_base["備註"].str.contains("續購")].copy()
@@ -383,15 +389,6 @@ else:
             # 排序
             df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
             df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
-            
-            # 預覽
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("新購預覽")
-                st.dataframe(df_new, use_container_width=True)
-            with col2:
-                st.subheader("續購預覽")
-                st.dataframe(df_renew, use_container_width=True)
             
             # 下載
             def to_excel(df_new, df_renew):
