@@ -173,7 +173,21 @@ function loadFunction(feature) {
                     </select>
                 </div>
             </div>
-
+     } else if (feature === 'attendance_report') {
+        titleDiv.textContent = '出勤明細統計';
+        contentDiv.innerHTML = `
+            <div class="form-group">
+                <p style="color: #666; margin-bottom: 20px;">請上傳員工出勤原始資料。</p>
+            </div>
+            <div class="form-group">
+                <label for="attendance-file">選擇出勤檔案 (CSV/Excel)</label>
+                <input type="file" id="attendance-file" accept=".xlsx,.xls,.csv">
+            </div>
+            <button class="btn btn-primary" onclick="processAttendanceReport()" style="margin-top: 20px;">
+                開始統計出勤
+            </button>
+            <div id="attendance-result"></div>
+        `;   
             <h3 style="margin-top: 40px; margin-bottom: 15px; border-top: 2px solid #e5e7eb; padding-top: 30px;">1. 體驗與品牌推廣</h3>
             <div class="form-group">
                 <label for="revenue-tier">個人業績獎金級別</label>
