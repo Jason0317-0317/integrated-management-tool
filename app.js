@@ -187,7 +187,6 @@ function loadFunction(feature) {
                 開始統計出勤
             </button>
             <div id="attendance-result"></div> `;
-        }
             <h3 style="margin-top: 40px; margin-bottom: 15px; border-top: 2px solid #e5e7eb; padding-top: 30px;">1. 體驗與品牌推廣</h3>
             <div class="form-group">
                 <label for="revenue-tier">個人業績獎金級別</label>
