@@ -668,6 +668,6 @@ else:
                 st.download_button(
                     label="點我儲存 Excel 檔案",
                     data=excel_file,
-                    file_name=f"{name}_獎金結算_{date}.xlsx",
+                    file_name=f"{name}_獎金結算_{date_str}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
