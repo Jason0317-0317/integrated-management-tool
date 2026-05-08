@@ -98,7 +98,7 @@ else:
     # ===== 預約報表統計 =====
     if st.session_state.feature == "lesson_report":
         st.title("教練堂數統計")
-        st.markdown("此版本會將 **課程項目顯示於直排**，**老師姓名顯示於橫排**。")
+        st.markdown("請上傳原始團體課預約報表，系統將自動提取並整理為指定格式。")
         
         # 1. 定義老師排序順序與轉換字典
         NAME_CONVERSION = {
