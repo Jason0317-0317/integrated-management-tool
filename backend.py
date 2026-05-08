@@ -204,7 +204,7 @@ def process_sales_report():
         
         # 建立基礎資料
         df_base = pd.DataFrame()
-        df_base["合約建立日期日期"] = df_raw["開課日期"]
+        df_base["合約建立日期日期"] = df_raw["交易日期"]
         df_base["業績人員"] = df_raw["銷售人員"]
         df_base["會員姓名"] = df_raw["會員姓名"]
         df_base["開課日期"] = np.nan
@@ -218,16 +218,11 @@ def process_sales_report():
         # 計算單價
         def get_unit_price(contract_type):
             contract_type = str(contract_type)
-            if '一對一' in contract_type:
-                return 2300
-            elif '一對二' in contract_type:
-                return 1300
-            elif '一對三' in contract_type:
-                return 1050
-            elif '一對四' in contract_type:
-                return 900
-            else:
-                return 0
+            if '一對一' in contract_type: return 2300
+            elif '一對二' in contract_type: return 1300
+            elif '一對三' in contract_type: return 1050
+            elif '一對四' in contract_type: return 900
+            else: return 0
         
         df_base["購買合約原價"] = df_base["合約類型"].apply(get_unit_price) * df_base["堂數"]
         
