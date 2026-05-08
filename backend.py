@@ -204,9 +204,10 @@ def process_sales_report():
         
         # 建立基礎資料
         df_base = pd.DataFrame()
+        df_base["開課日期"] = df_raw["合約建立日期日期"]
         df_base["業績人員"] = df_raw["銷售人員"]
         df_base["會員姓名"] = df_raw["會員姓名"]
-        df_base["開課日期"] = df_raw["交易日期"]
+        df_base["開課日期"] = np.nan
         df_base["合約類型"] = df_raw["票券/商品種類"]
         df_base["堂數"] = pd.to_numeric(df_raw["數量"], errors='coerce').fillna(0)
         
