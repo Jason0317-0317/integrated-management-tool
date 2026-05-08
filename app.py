@@ -323,6 +323,8 @@ else:
         st.title("團個績計算工具")
         st.write("請上傳原始交易報表，系統將自動提取並整理為指定格式。")
         
+        tab1, tab2 = st.tabs(["業績轉換", "體驗篩選"])
+        
         def get_unit_price(contract_type):
             contract_type = str(contract_type)
             if '一對一' in contract_type:
@@ -336,10 +338,11 @@ else:
             else:
                 return 0
         
-        uploaded_file_sales = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="sales_uploader")
-        
-        if uploaded_file_sales:
-            df_raw = pd.read_excel(uploaded_file_sales, header=1)
+        with tab1:
+            uploaded_file_sales = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="sales_uploader")
+            
+            if uploaded_file_sales:
+                df_raw = pd.read_excel(uploaded_file_sales, header=1)
             
             # 建立基礎資料
             df_base = pd.DataFrame()
@@ -412,8 +415,39 @@ else:
                 )
             else:
                 st.error("找不到符合條件的資料")
-        else:
-            st.write("請上傳檔案以開始處理。")
+            
+            if not uploaded_file_sales:
+                st.write("請上傳檔案以開始處理。")
+        
+        with tab2:
+            uploaded_file_exp = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="experience_uploader")
+            
+            if uploaded_file_exp:
+                df_exp = pd.read_excel(uploaded_file_exp, header=1)
+                
+                df_experience = df_exp[df_exp["備註"].astype(str).str.contains("體驗", na=False)].copy()
+                
+                if not df_experience.empty:
+                    st.subheader("體驗記錄")
+                    st.dataframe(df_experience, use_container_width=True)
+                    
+                    def to_excel_exp(df):
+                        output = io.BytesIO()
+                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                            df.to_excel(writer, index=False, sheet_name='體驗')
+                        return output.getvalue()
+                    
+                    excel_data_exp = to_excel_exp(df_experience)
+                    st.download_button(
+                        label="下載體驗記錄",
+                        data=excel_data_exp,
+                        file_name="體驗記錄.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                else:
+                    st.warning("找不到備註包含'體驗'的記錄")
+            else:
+                st.write("請上傳檔案以開始處理。")
     
     # ===== 業務獎金計算 =====
     elif st.session_state.feature == "editor_bonus":
