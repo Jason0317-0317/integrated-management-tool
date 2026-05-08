@@ -404,19 +404,6 @@ else:
             # 篩選體驗記錄
             df_experience = df_base[df_base["備註"].astype(str).str.contains("體驗", na=False)].copy()
             
-            # 預覽
-            st.markdown("### 上傳記錄預覽")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.subheader("新購預覽")
-                st.dataframe(df_new, use_container_width=True)
-            with col2:
-                st.subheader("續購預覽")
-                st.dataframe(df_renew, use_container_width=True)
-            with col3:
-                st.subheader("體驗預覽")
-                st.dataframe(df_experience, use_container_width=True)
-            
             # 下載
             def to_excel_all(df_new, df_renew, df_experience):
                 output = io.BytesIO()
