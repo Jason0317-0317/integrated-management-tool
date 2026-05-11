@@ -409,7 +409,6 @@ else:
                 df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
                 df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
                 df_trial = df_trial.sort_values(by="業績人員").reset_index(drop=True)
-                output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
                     df_new.to_excel(writer, sheet_name='個績', index=False)
                     df_renew.to_excel(writer, sheet_name='團績', index=False)
@@ -426,6 +425,11 @@ else:
                                     subtotal[col] = group[col].sum()
                         result.append(pd.DataFrame([subtotal]))
                     return pd.concat(result, ignore_index=True) if result else df
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    add_subtotals(df_new).to_excel(writer, sheet_name='個績', index=False)
+                    add_subtotals(df_renew).to_excel(writer, sheet_name='團績', index=False)
+                    df_trial.to_excel(writer, sheet_name='體驗', index=False)
                 st.download_button(
                     label="下載轉換後報表 (Excel)",
                     data=output.getvalue(),
