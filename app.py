@@ -19,6 +19,8 @@ if "role" not in st.session_state:
     st.session_state.role = None
 if "feature" not in st.session_state:
     st.session_state.feature = None
+if "show_finance_login" not in st.session_state:
+    st.session_state.show_finance_login = False
 
 # ========================
 # 步驟 1: 身份選擇
@@ -43,6 +45,7 @@ if st.session_state.role is None:
             if st.button("小編登入", key="editor_btn", use_container_width=True):
                 st.session_state.role = "editor"
                 st.rerun()
+        col_btn3, col_btn4 = st.columns(2)
         with col_btn3:
             if st.button("美編登入", key="designer_btn", use_container_width=True):
                 st.session_state.role = "designer"
