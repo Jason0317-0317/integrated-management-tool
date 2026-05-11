@@ -180,13 +180,42 @@ function loadFunction(feature) {
                 <p style="color: #666; margin-bottom: 20px;">請上傳員工出勤原始資料。</p>
             </div>
             <div class="form-group">
-                <label for="attendance-file">選擇出勤檔案 (CSV/Excel)</label>
-                <input type="file" id="attendance-file" accept=".xlsx,.xls,.csv">
+                <label for="attendance-file">選擇出勤檔案 (Excel)</label>
+                <input type="file" id="attendance-file" accept=".xlsx,.xls">
             </div>
             <button class="btn btn-primary" onclick="processAttendanceReport()" style="margin-top: 20px;">
                 開始統計出勤
             </button>
-            <div id="attendance-result"></div> `;
+            <div id="attendance-result"></div>
+        `;
+     } else if (feature === 'editor_bonus') {
+        titleDiv.textContent = '業務獎金計算系統';
+        contentDiv.innerHTML = `
+            <h3 style="margin-top: 20px; margin-bottom: 15px;">基本資訊設定</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="gym">館別</label>
+                    <select id="gym">
+                        <option>巨蛋館</option>
+                        <option>其他分館</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editor-name">小編姓名</label>
+                    <input type="text" id="editor-name" placeholder="請輸入姓名">
+                </div>
+                <div class="form-group">
+                    <label for="report-date">報表日期</label>
+                    <input type="date" id="report-date">
+                </div>
+                <div class="form-group">
+                    <label for="employment-type">員工身份</label>
+                    <select id="employment-type">
+                        <option value="full-time">正職</option>
+                        <option value="part-time">兼職</option>
+                    </select>
+                </div>
+            </div>
             <h3 style="margin-top: 40px; margin-bottom: 15px; border-top: 2px solid #e5e7eb; padding-top: 30px;">1. 體驗與品牌推廣</h3>
             <div class="form-group">
                 <label for="revenue-tier">個人業績獎金級別</label>
@@ -543,6 +572,92 @@ function downloadBonusReport() {
         const a = document.createElement('a');
         a.href = url;
         a.download = `${data.name}_獎金結算_${data.date}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(error => alert('下載失敗: ' + error.message));
+}
+
+
+// 處理出勤報表
+function processAttendanceReport() {
+    const fileInput = document.getElementById('attendance-file');
+    if (!fileInput.files.length) {
+        alert('請先選擇檔案');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    fetch(`${API_BASE}/process-attendance-report`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const resultDiv = document.getElementById('attendance-result');
+            let html = `
+                <div style="margin-top: 30px; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
+                    <h3 style="margin-top: 0;">出勤統計結果</h3>
+                    <p><strong>總記錄數：</strong>${data.total_records} 筆</p>
+                    <p><strong>員工人數：</strong>${data.total_employees} 位</p>
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 15px;">員工出勤統計</h4>
+                    <table style="width: 100%; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr style="background-color: #e0e0e0;">
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">姓名</th>
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">出勤天數</th>
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">總工時(時:分)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.summary.forEach((emp, idx) => {
+                const bgColor = idx % 2 === 0 ? '#ffffff' : '#f9f9f9';
+                html += `
+                    <tr style="background-color: ${bgColor};">
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.name}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${emp.days}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${emp.total_hhmm}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                    
+                    <button class="btn btn-primary" onclick="downloadAttendanceReport()" style="margin-top: 20px;">
+                        下載完整報表 (Excel)
+                    </button>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+        } else {
+            alert('處理失敗: ' + data.error);
+        }
+    })
+    .catch(error => alert('上傳失敗: ' + error.message));
+}
+
+// 下載出勤報表
+function downloadAttendanceReport() {
+    fetch(`${API_BASE}/download-attendance-report`, {
+        method: 'POST'
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `出勤明細統計_${new Date().toISOString().split('T')[0]}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
