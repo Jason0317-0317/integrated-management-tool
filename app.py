@@ -406,17 +406,26 @@ else:
                 df_new = df_base[df_base["備註"].str.contains("新購|首購")].copy()
                 df_renew = df_base[df_base["備註"].str.contains("續購")].copy()
                 df_trial = df_base[df_base["備註"].str.contains("體驗")].copy()
-                
                 df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
                 df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
                 df_trial = df_trial.sort_values(by="業績人員").reset_index(drop=True)
-                
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
                     df_new.to_excel(writer, sheet_name='個績', index=False)
                     df_renew.to_excel(writer, sheet_name='團績', index=False)
                     df_trial.to_excel(writer, sheet_name='體驗', index=False)
-                
+                    def add_subtotals(df):
+                        numeric_cols = ["堂數", "合約總價", "金額(未稅)", "業績獎金", "購買合約原價"]
+                        result = []
+                        for person, group in df.groupby("業績人員", sort=False):
+                            result.append(group)
+                            subtotal = {col: "" for col in df.columns}
+                            subtotal["業績人員"] = f"【{person} 小計】"
+                            for col in numeric_cols:
+                                if col in df.columns:
+                                    subtotal[col] = group[col].sum()
+                        result.append(pd.DataFrame([subtotal]))
+                    return pd.concat(result, ignore_index=True) if result else df
                 st.download_button(
                     label="下載轉換後報表 (Excel)",
                     data=output.getvalue(),
