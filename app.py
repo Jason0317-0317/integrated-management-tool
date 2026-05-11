@@ -115,15 +115,27 @@ elif st.session_state.feature is None:
                     st.session_state.feature = "attendance_report"
                     st.rerun()
         
-        else:  # editor
+        elif st.session_state.role == "editor":
             st.markdown("<h1 style='text-align: center;'>小編功能選擇</h1>", unsafe_allow_html=True)
             st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
-            
             st.markdown("<br>", unsafe_allow_html=True)
             
             if st.button("業務獎金計算", key="editor_bonus", use_container_width=True):
                 st.session_state.feature = "editor_bonus"
                 st.rerun()
+        elif st.session_state.role == "designer":
+            st.markdown("<h1 style='text-align: center;'>美編功能選擇</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            st.info("美編功能開發中，敬請期待。")
+
+        elif st.session_state.role == "finance":
+            st.markdown("<h1 style='text-align: center;'>財務功能選擇</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            st.info("財務功能開發中，敬請期待。")
 
 # ========================
 # 步驟 3: 顯示功能
