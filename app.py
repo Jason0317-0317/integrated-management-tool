@@ -409,12 +409,6 @@ else:
                 df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
                 df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
                 
-                st.markdown("### 新購/首購 預覽")
-                st.dataframe(df_new, use_container_width=True)
-                
-                st.markdown("### 續購 預覽")
-                st.dataframe(df_renew, use_container_width=True)
-                
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
                     df_new.to_excel(writer, sheet_name='新購首購', index=False)
