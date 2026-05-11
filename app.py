@@ -413,16 +413,16 @@ else:
                     df_new.to_excel(writer, sheet_name='個績', index=False)
                     df_renew.to_excel(writer, sheet_name='團績', index=False)
                     df_trial.to_excel(writer, sheet_name='體驗', index=False)
-                    def add_subtotals(df):
-                        numeric_cols = ["堂數", "合約總價", "金額(未稅)", "業績獎金", "購買合約原價"]
-                        result = []
-                        for person, group in df.groupby("業績人員", sort=False):
-                            result.append(group)
-                            subtotal = {col: "" for col in df.columns}
-                            subtotal["業績人員"] = f"【{person} 小計】"
-                            for col in numeric_cols:
-                                if col in df.columns:
-                                    subtotal[col] = group[col].sum()
+                def add_subtotals(df):
+                    numeric_cols = ["堂數", "合約總價", "金額(未稅)", "業績獎金", "購買合約原價"]
+                    result = []
+                    for person, group in df.groupby("業績人員", sort=False):
+                        result.append(group)
+                        subtotal = {col: "" for col in df.columns}
+                        subtotal["業績人員"] = f"【{person} 小計】"
+                        for col in numeric_cols:
+                            if col in df.columns:
+                                subtotal[col] = group[col].sum()
                         result.append(pd.DataFrame([subtotal]))
                     return pd.concat(result, ignore_index=True) if result else df
                 output = io.BytesIO()
