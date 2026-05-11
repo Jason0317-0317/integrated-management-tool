@@ -409,10 +409,7 @@ else:
                 df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
                 df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
                 df_trial = df_trial.sort_values(by="業績人員").reset_index(drop=True)
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_new.to_excel(writer, sheet_name='個績', index=False)
-                    df_renew.to_excel(writer, sheet_name='團績', index=False)
-                    df_trial.to_excel(writer, sheet_name='體驗', index=False)
+                
                 def add_subtotals(df):
                     numeric_cols = ["堂數", "合約總價", "金額(未稅)", "業績獎金", "購買合約原價"]
                     result = []
