@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 from datetime import datetime
+from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 import numpy as np
@@ -63,7 +64,8 @@ elif st.session_state.feature is None:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            col_f1, col_f2 = st.columns(2)
+            # 使用三欄位佈局
+            col_f1, col_f2, col_f3 = st.columns(3)
             
             with col_f1:
                 if st.button("教練堂數統計", key="lesson_report", use_container_width=True):
@@ -73,6 +75,11 @@ elif st.session_state.feature is None:
             with col_f2:
                 if st.button("團個績計算工具", key="sales_report", use_container_width=True):
                     st.session_state.feature = "sales_report"
+                    st.rerun()
+            
+            with col_f3:
+                if st.button("出勤明細統計", key="attendance_report", use_container_width=True):
+                    st.session_state.feature = "attendance_report"
                     st.rerun()
         
         else:  # editor
@@ -258,290 +265,266 @@ else:
                             col_name = f'團{count}人'
                             df_stats.at[teacher, col_name] += 1
                 
-                # 計算小計
                 df_stats['小計'] = df_stats.sum(axis=1)
                 
-                # 排序老師
+                # 排序
                 df_stats['sort_key'] = df_stats.index.map(teacher_sort_key)
                 df_stats = df_stats.sort_values('sort_key').drop(columns=['sort_key'])
                 
-                # 計算合計
+                # 合計列
                 total_row = df_stats.sum().to_frame().T
                 total_row.index = ['合計']
-                df_final_with_total = pd.concat([df_stats, total_row])
+                df_final = pd.concat([df_stats, total_row])
                 
                 # 轉置
-                df_transposed = df_final_with_total.T
-                df_transposed.index.name = "課程項目 \ 姓名"
+                df_transposed = df_final.T
                 
-                # 介面呈現
-                st.success("檔案處理成功。")
-                st.info(f"統計館別：{selected_branch} | 統計區間：{start_date} 至 {end_date}")
+                st.markdown("### 3. 統計結果預覽")
+                st.dataframe(df_transposed, use_container_width=True)
                 
-                tab_stat, tab_detail = st.tabs(["橫向統計表", "原始明細對照"])
-                with tab_stat:
-                    st.dataframe(df_transposed, use_container_width=False)
-                with tab_detail:
-                    st.dataframe(df_filtered[[date_col, course_col, teacher_col, '正式姓名', count_col]], use_container_width=True, hide_index=True)
-                
-                # 下載 Excel
-                buffer = io.BytesIO()
-                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                    info_df = pd.DataFrame([
-                        ['統計館別', selected_branch],
-                        ['統計區間', f"{start_date} 至 {end_date}"]
-                    ])
-                    
-                    info_df.to_excel(writer, sheet_name='統計總表', index=False, header=False, startrow=0)
-                    df_transposed.to_excel(writer, sheet_name='統計總表', startrow=3)
-                    
-                    df_transposed_v2 = df_transposed.copy()
-                    if '團1人' in df_transposed_v2.index and '團2人' in df_transposed_v2.index:
-                        df_transposed_v2.loc['團1-2人'] = df_transposed_v2.loc['團1人'] + df_transposed_v2.loc['團2人']
-                        df_transposed_v2 = df_transposed_v2.drop(['團1人', '團2人'])
-                        new_index = ['團1-2人'] + [i for i in df_transposed_v2.index if i != '團1-2人']
-                        df_transposed_v2 = df_transposed_v2.reindex(new_index)
-                    
-                    info_df.to_excel(writer, sheet_name='統計總表2', index=False, header=False, startrow=0)
-                    df_transposed_v2.to_excel(writer, sheet_name='統計總表2', startrow=3)
-                    
-                    df_filtered.to_excel(writer, sheet_name='預約報表明細', index=False)
+                # 匯出 Excel
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df_transposed.to_excel(writer, sheet_name='堂數統計')
                 
                 st.download_button(
-                    label="下載橫向 Excel 報表",
-                    data=buffer.getvalue(),
-                    file_name=f"預約統計_{selected_branch}.xlsx",
+                    label="下載統計報表 (Excel)",
+                    data=output.getvalue(),
+                    file_name=f"堂數統計_{selected_branch}_{start_date}_{end_date}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-            
+                
             except Exception as e:
-                st.error(f"處理失敗: {e}")
-                st.exception(e)
-    
-    # ===== 業績報表轉換 =====
+                st.error(f"處理過程中發生錯誤: {e}")
+
+    # ===== 業績報表自動化轉換工具 =====
     elif st.session_state.feature == "sales_report":
-        st.title("團個績計算工具")
-        st.write("請上傳原始交易報表，系統將自動提取並整理為指定格式。")
+        st.title("業績報表自動化轉換工具")
+        st.markdown("請上傳原始交易報表，系統將自動提取並整理為指定格式。")
         
-        def get_unit_price(contract_type):
-            contract_type = str(contract_type)
-            if '一對一' in contract_type:
-                return 2300
-            elif '一對二' in contract_type:
-                return 1300
-            elif '一對三' in contract_type:
-                return 1050
-            elif '一對四' in contract_type:
-                return 900
-            else:
-                return 0
+        uploaded_file = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="sales_uploader")
         
-        uploaded_file_sales = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="sales_uploader")
-        
-        if uploaded_file_sales:
-            df_raw = pd.read_excel(uploaded_file_sales, header=1)
-            
-            # 建立基礎資料
-            df_base = pd.DataFrame()
-            df_base["合約建立日期"] = df_raw["交易日期"]
-            df_base["業績人員"] = df_raw["銷售人員"]
-            df_base["會員姓名"] = df_raw["會員姓名"]
-            df_base["開課日期"] = np.nan
-            df_base["合約類型"] = df_raw["票券/商品種類"]
-            df_base["堂數"] = pd.to_numeric(df_raw["數量"], errors='coerce').fillna(0)
-            
-            total_price = pd.to_numeric(df_raw["總計(元)"], errors='coerce').fillna(0)
-            df_base["合約總價"] = total_price
-            df_base["金額(未稅)"] = (total_price / 1.05).round(0)
-            
-            df_base["購買合約原價"] = df_base["合約類型"].apply(get_unit_price) * df_base["堂數"]
-            
-            df_base["銷售折數"] = np.where(
-                df_base["購買合約原價"] != 0,
-                (df_base["金額(未稅)"] / df_base["購買合約原價"]).round(2),
-                0
-            )
-            
-            df_base["活動"] = df_raw["Tag"]
-            
-            cond = [
-                (df_base["銷售折數"] > 0.8),
-                (df_base["銷售折數"] == 0.8),
-                (df_base["銷售折數"] < 0.8) & (df_base["銷售折數"] > 0)
-            ]
-            
-            bonus_rate = np.select(cond, [0.02, 0.015, 0.01], default=0)
-            
-            df_base["業績計算"] = np.select(cond, ["2%", "1.5%", "1%"], default="0%")
-            df_base["業績獎金"] = (df_base["金額(未稅)"] * bonus_rate).round(0)
-            
-            df_base["備註"] = df_raw["備註"].astype(str).replace('nan', '')
-            target_columns = [
-            "合約建立日期", "業績人員", "會員姓名", "開課日期", "合約類型", 
-            "堂數", "合約總價", "金額(未稅)", "銷售折數", "活動", 
-            "業績計算", "業績獎金", "購買合約原價", "備註"
-            ]
-            df_base = df_base[target_columns]
-            # 分類
-            df_new = df_base[df_base["備註"].str.contains("新購|首購")].copy()
-            df_renew = df_base[df_base["備註"].str.contains("續購")].copy()
-            
-            # 排序
-            df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
-            df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
-            
-            # 下載
-            def to_excel(df_new, df_renew):
+        if uploaded_file is not None:
+            try:
+                df_raw = pd.read_excel(uploaded_file, header=1)
+                
+                # 建立基礎資料
+                df_base = pd.DataFrame()
+                df_base["合約建立日期"] = df_raw["交易日期"]
+                df_base["業績人員"] = df_raw["銷售人員"]
+                df_base["會員姓名"] = df_raw["會員姓名"]
+                df_base["開課日期"] = np.nan
+                df_base["合約類型"] = df_raw["票券/商品種類"]
+                df_base["堂數"] = pd.to_numeric(df_raw["數量"], errors='coerce').fillna(0)
+                
+                total_price = pd.to_numeric(df_raw["總計(元)"], errors='coerce').fillna(0)
+                df_base["合約總價"] = total_price
+                df_base["金額(未稅)"] = (total_price / 1.05).round(0)
+                
+                def get_unit_price(contract_type):
+                    contract_type = str(contract_type)
+                    if '一對一' in contract_type: return 2300
+                    elif '一對二' in contract_type: return 1300
+                    elif '一對三' in contract_type: return 1050
+                    elif '一對四' in contract_type: return 900
+                    else: return 0
+                
+                df_base["購買合約原價"] = df_base["合約類型"].apply(get_unit_price) * df_base["堂數"]
+                
+                df_base["銷售折數"] = np.where(
+                    df_base["購買合約原價"] != 0,
+                    (df_base["金額(未稅)"] / df_base["購買合約原價"]).round(2),
+                    0
+                )
+                
+                df_base["活動"] = df_raw["Tag"]
+                
+                cond = [
+                    (df_base["銷售折數"] > 0.8),
+                    (df_base["銷售折數"] == 0.8),
+                    (df_base["銷售折數"] < 0.8) & (df_base["銷售折數"] > 0)
+                ]
+                
+                bonus_rate = np.select(cond, [0.02, 0.015, 0.01], default=0)
+                df_base["業績計算"] = np.select(cond, ["2%", "1.5%", "1%"], default="0%")
+                df_base["業績獎金"] = (df_base["金額(未稅)"] * bonus_rate).round(0)
+                
+                df_base["備註"] = df_raw["備註"].astype(str).replace('nan', '')
+                
+                target_columns = [
+                    "合約建立日期", "業績人員", "會員姓名", "開課日期", "合約類型", 
+                    "堂數", "合約總價", "金額(未稅)", "銷售折數", "活動", 
+                    "業績計算", "業績獎金", "購買合約原價", "備註"
+                ]
+                df_base = df_base[target_columns]
+                
+                df_new = df_base[df_base["備註"].str.contains("新購|首購")].copy()
+                df_renew = df_base[df_base["備註"].str.contains("續購")].copy()
+                
+                df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
+                df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
+                
+                st.markdown("### 新購/首購 預覽")
+                st.dataframe(df_new, use_container_width=True)
+                
+                st.markdown("### 續購 預覽")
+                st.dataframe(df_renew, use_container_width=True)
+                
                 output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_new.to_excel(writer, index=False, sheet_name='新購')
-                    df_renew.to_excel(writer, index=False, sheet_name='續購')
-                return output.getvalue()
-            
-            # 篩選體驗記錄
-            df_experience = df_base[df_base["備註"].astype(str).str.contains("體驗", na=False)].copy()
-            
-            # 下載
-            def to_excel_all(df_new, df_renew, df_experience):
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_new.to_excel(writer, index=False, sheet_name='新購')
-                    df_renew.to_excel(writer, index=False, sheet_name='續購')
-                    df_experience.to_excel(writer, index=False, sheet_name='體驗')
-                return output.getvalue()
-            
-            if not df_new.empty or not df_renew.empty or not df_experience.empty:
-                excel_data = to_excel_all(df_new, df_renew, df_experience)
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df_new.to_excel(writer, sheet_name='新購首購', index=False)
+                    df_renew.to_excel(writer, sheet_name='續購', index=False)
                 
                 st.download_button(
-                    label="下載轉換後的 Excel 報表",
-                    data=excel_data,
-                    file_name="業績產出報表.xlsx",
+                    label="下載轉換後報表 (Excel)",
+                    data=output.getvalue(),
+                    file_name=f"業績報表轉換_{datetime.now().strftime('%Y%m%d')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-            else:
-                st.error("找不到符合條件的資料")
-        else:
-            st.write("請上傳檔案以開始處理。")
-    
-    # ===== 業務獎金計算 =====
+                
+            except Exception as e:
+                st.error(f"處理過程中發生錯誤: {e}")
+
+    # ===== 出勤明細統計 (新功能) =====
+    elif st.session_state.feature == "attendance_report":
+        st.title("出勤明細統計")
+        st.markdown("上傳原始 Excel 進出場記錄，系統將自動生成統計報表。")
+        
+        uploaded_file = st.file_uploader("選擇原始 Excel 進出場記錄檔案", type=["xlsx"], key="attendance_uploader")
+        
+        if uploaded_file is not None:
+            try:
+                df = pd.read_excel(uploaded_file)
+                
+                # 資料清洗
+                df['進場日期'] = pd.to_datetime(df['進場日期'], errors='coerce').dt.date
+                df['出場日期'] = pd.to_datetime(df['出場日期'], errors='coerce').dt.date
+                df['總時間(分)'] = pd.to_numeric(df['總時間(分)'], errors='coerce')
+                
+                # 統計
+                summary = (
+                    df.groupby('姓名')
+                    .agg(
+                        出勤天數=('進場日期', 'nunique'),
+                        總時數_分=('總時間(分)', 'sum'),
+                    )
+                    .reset_index()
+                    .sort_values('姓名')
+                )
+                
+                def minutes_to_hhmm(minutes):
+                    if pd.isna(minutes): return ""
+                    h, m = divmod(int(minutes), 60)
+                    return f"{h}:{m:02d}"
+                
+                summary['總工時(時:分)'] = summary['總時數_分'].apply(minutes_to_hhmm)
+                
+                st.markdown("### 出勤統計預覽")
+                st.dataframe(summary[['姓名', '出勤天數', '總時數_分', '總工時(時:分)']], use_container_width=True)
+                
+                # 報表生成邏輯 (整合 abcde 專案邏輯)
+                if st.button("產生完整報表並下載"):
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        # Sheet 1: 出勤明細
+                        df_sorted = df.sort_values(['姓名', '進場日期', '進場時間']).reset_index(drop=True)
+                        df_sorted['總工時(時:分)'] = df_sorted['總時間(分)'].apply(minutes_to_hhmm)
+                        df_sorted.to_excel(writer, sheet_name='出勤明細', index=False)
+                        
+                        # Sheet 2: 月份出勤統計
+                        summary.to_excel(writer, sheet_name='月份出勤統計', index=False)
+                        
+                        # Sheet 3: 月曆排班表
+                        df2 = df.copy()
+                        df2['日期'] = df2['進場日期'].astype(str).str[:10]
+                        pivot = df2.pivot_table(
+                            index='姓名', columns='日期', values='總時間(分)', aggfunc='sum'
+                        ).fillna(0)
+                        pivot.to_excel(writer, sheet_name='月曆排班表')
+                        
+                    st.download_button(
+                        label="點我儲存 Excel 檔案",
+                        data=output.getvalue(),
+                        file_name=f"出勤明細統計_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+            except Exception as e:
+                st.error(f"處理過程中發生錯誤: {e}")
+
+    # ===== 業務獎金計算系統 =====
     elif st.session_state.feature == "editor_bonus":
         st.title("業務獎金計算系統")
         
-        # 計算函式
-        def calculate_bonus(deal_counts, extra_classes, loyalty_counts, upgrade_counts, is_full_time, brand_count, personal_revenue_tier=None):
-            """
-            personal_revenue_tier 選項: None, "12萬元", "24萬元", "30萬元"
-            """
+        def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier):
+            # 1. 體驗成交獎金
+            d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + 
+                      deal_dict["7天內"] * 50 + deal_dict["超過7天"] * 0)
             
-            # 1. 個人業績獎金
-            revenue_bonus_map = {
-                None: 0,
-                "不列入計算": 0,
-                "12萬元": 2000,
-                "24萬元": 4000,
-                "30萬元": 6000
-            }
-            r_total = revenue_bonus_map.get(personal_revenue_tier, 0)
+            # 2. 補位獎金
+            c_bonus = classes * 30
             
-            # 2. 體驗成交獎金
-            d_total = (deal_counts.get("當天", 0) * 80 + 
-                       deal_counts.get("48小時", 0) * 60 + 
-                       deal_counts.get("7天內", 0) * 50 +
-                       deal_counts.get("超過7天", 0) * 0)
+            # 3. 回流獎金
+            l_bonus = (loyalty_dict["10堂"] * 100 + loyalty_dict["20堂"] * 200 + 
+                      loyalty_dict["30堂"] * 300 + loyalty_dict["40堂"] * 500)
             
-            # 3. 補位獎金
-            c_total = extra_classes * 30
+            # 4. 結構升級獎金
+            u_bonus = (upgrade_counts["1對2變1對3"] * 100 + 
+                      upgrade_counts["團課變期班"] * 150 + 
+                      upgrade_counts["包班成立"] * 300)
             
-            # 4. 回流獎勵獎金 (STP-T)
-            l_total = (loyalty_counts.get("10堂", 0) * 100 + 
-                       loyalty_counts.get("20堂", 0) * 200 + 
-                       loyalty_counts.get("30堂", 0) * 300 + 
-                       loyalty_counts.get("40堂", 0) * 500)
-            
-            # 5. 結構升級獎金
-            upgrade_prices = {"1對2變1對3": 100, "團課變期班": 150, "包班成立": 300}
-            u_total = sum(upgrade_prices.get(name, 0) * count for name, count in upgrade_counts.items())
-            
-            # 6. 品牌知名度獎金
-            base_val = 5 if is_full_time else 2
-            b_note = ""
+            # 5. 品牌知名度獎金
+            base_val = 5 if is_ft else 2
             if brand_count == 0:
-                b_total = -200
+                b_bonus = -200
                 b_note = "推廣人數為 0"
             elif brand_count < base_val:
-                b_total = -100
+                b_bonus = -100
                 b_note = f"未達門檻 ({base_val}位)"
             elif brand_count == base_val:
-                b_total = 0
+                b_bonus = 0
                 b_note = "符合基本門檻"
             else:
                 extra_units = (brand_count - base_val) // 5
-                b_total = extra_units * 200
+                b_bonus = extra_units * 200
                 b_note = f"加發 {extra_units} 組獎金"
             
-            # 7. 月轉換高手筆數累計
-            total_deals = (sum(deal_counts.values()) + 
-                           sum(upgrade_counts.values()) + 
-                           sum(loyalty_counts.values()) + 
-                           extra_classes)
+            # 6. 月高手獎勵
+            total_v = sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values())
+            if total_v >= 50: m_bonus = 5000
+            elif total_v >= 30: m_bonus = 2000
+            else: m_bonus = 0
             
-            if total_deals >= 50:
-                monthly_bonus = 5000
-            elif total_deals >= 30:
-                monthly_bonus = 2000
-            else:
-                monthly_bonus = 0
-                
-            final_total = d_total + c_total + l_total + u_total + monthly_bonus + b_total + r_total
+            # 7. 個人業績獎金
+            rev_map = {"不列入計算": 0, "12萬元": 2000, "24萬元": 4000, "30萬元": 6000}
+            r_bonus = rev_map.get(revenue_tier, 0)
             
-            return final_total, total_deals, monthly_bonus, l_total, d_total, u_total, b_total, b_note, r_total
-        
-        # 產生 Excel 報表
+            total = d_bonus + c_bonus + l_bonus + u_bonus + b_bonus + m_bonus + r_bonus
+            return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, b_note, r_bonus
+
         def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier):
             output = io.BytesIO()
-            
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 workbook = writer.book
                 worksheet = workbook.create_sheet('獎金結算', 0)
-                
                 bold_font = Font(bold=True, name='微軟正黑體')
                 center_align = Alignment(horizontal="center", vertical="center")
                 thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                 
-                # 基本資訊區塊
-                worksheet.cell(row=1, column=1, value="館別").font = bold_font
-                worksheet.cell(row=1, column=2, value=meta_data["館別"])
-                worksheet.cell(row=1, column=3, value="")
-                worksheet.cell(row=1, column=4, value="")
+                info = [
+                    ["館別", meta_data["館別"]],
+                    ["報表日期", meta_data["報表日期"]],
+                    ["小編姓名", meta_data["小編姓名"]],
+                    ["員工身份", emp_type]
+                ]
+                for i, (k, v) in enumerate(info, 1):
+                    worksheet.cell(row=i, column=1, value=k).font = bold_font
+                    worksheet.cell(row=i, column=2, value=v)
                 
-                worksheet.cell(row=2, column=1, value="報表日期").font = bold_font
-                worksheet.cell(row=2, column=2, value=meta_data["報表日期"])
-                worksheet.cell(row=2, column=3, value="")
-                worksheet.cell(row=2, column=4, value="")
-                
-                worksheet.cell(row=3, column=1, value="小編姓名").font = bold_font
-                worksheet.cell(row=3, column=2, value=meta_data["小編姓名"])
-                worksheet.cell(row=3, column=3, value="")
-                worksheet.cell(row=3, column=4, value="")
-                
-                worksheet.cell(row=4, column=1, value="員工身份").font = bold_font
-                worksheet.cell(row=4, column=2, value=emp_type)
-                worksheet.cell(row=4, column=3, value="")
-                worksheet.cell(row=4, column=4, value="")
-                
-                # 空行
-                worksheet.cell(row=5, column=1, value="")
-                worksheet.cell(row=6, column=1, value="")
-                
-                # 報表表頭
                 header_row = 7
-                worksheet.cell(row=header_row, column=1, value="項目").font = bold_font
-                worksheet.cell(row=header_row, column=2, value="筆數").font = bold_font
-                worksheet.cell(row=header_row, column=3, value="獎金金額").font = bold_font
-                worksheet.cell(row=header_row, column=4, value="備註").font = bold_font
+                headers = ["項目", "筆數", "獎金金額", "備註"]
+                for i, h in enumerate(headers, 1):
+                    worksheet.cell(row=header_row, column=i, value=h).font = bold_font
                 
-                # 報表資料
                 data_rows = [
                     ["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""],
                     ["體驗成交", sum(deal_dict.values()), d_bonus, ""],
@@ -552,82 +535,45 @@ else:
                     ["月高手獎勵", total_v, m_bonus, f"總轉換筆數: {total_v}"],
                     ["總計", "", result, ""]
                 ]
-                
                 for r_idx, row_data in enumerate(data_rows, header_row + 1):
                     for c_idx, value in enumerate(row_data, 1):
                         cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
                         cell.alignment = center_align
                         cell.border = thin_border
-                        if r_idx == header_row + len(data_rows):
-                            cell.font = bold_font
+                        if r_idx == header_row + len(data_rows): cell.font = bold_font
                 
-                # 調整欄寬
                 worksheet.column_dimensions['A'].width = 15
                 worksheet.column_dimensions['B'].width = 15
                 worksheet.column_dimensions['C'].width = 15
                 worksheet.column_dimensions['D'].width = 20
-            
             return output.getvalue()
         
-        # 基本資訊設定 - 全部在主頁面
         st.markdown("### 基本資訊設定")
-        
         col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            gym = st.selectbox("館別", ["義昌館", "高美館", "中山館", "巨蛋館"], key="gym_select")
-        
-        with col2:
-            name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
-        
+        with col1: gym = st.selectbox("館別", ["義昌館", "高美館", "中山館", "巨蛋館"], key="gym_select")
+        with col2: name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
         with col3:
-            date_range = st.date_input(
-                "報表日期",
-                value=None,
-                key="date_input"
-            )
-            if isinstance(date_range, (list, tuple)) and len(date_range) == 2:
-                start_date, end_date = date_range
-                date_str = f"{start_date} 至 {end_date}"
-            elif date_range:
-                date_str = str(date_range)
-            else:
-                date_str = ""
-                date_range = None
-        
-        with col4:
-            is_ft = st.selectbox("員工身份", ["正職", "兼職"], key="employment_select") == "正職"
+            date_range = st.date_input("報表日期", value=None, key="date_input")
+            date_str = str(date_range) if date_range else ""
+        with col4: is_ft = st.selectbox("員工身份", ["正職", "兼職"], key="employment_select") == "正職"
         
         st.divider()
-        
-        # 1. 體驗與品牌推廣區塊
         st.markdown("### 1. 體驗與品牌推廣")
-        
-        # 個人業績選擇
-        revenue_tier = st.selectbox(
-            "個人業績獎金級別", 
-            ["不列入計算", "12萬元", "24萬元", "30萬元"],
-            key="revenue_tier_select"
-        )
-        
+        revenue_tier = st.selectbox("個人業績獎金級別", ["不列入計算", "12萬元", "24萬元", "30萬元"], key="revenue_tier_select")
         st.divider()
-        
         col_a, col_b = st.columns(2)
-        
         with col_a:
             d_today = st.number_input("當天成交(筆)", min_value=0, value=0, key="deal_today")
             d_48h = st.number_input("48小時(筆)", min_value=0, value=0, key="deal_48h")
             d_7d = st.number_input("7天內(筆)", min_value=0, value=0, key="deal_7d")
             d_over7 = st.number_input("超過7天(筆)", min_value=0, value=0, key="deal_over7")
             deal_dict = {"當天": d_today, "48小時": d_48h, "7天內": d_7d, "超過7天": d_over7}
-        
         with col_b:
             brand_input = st.number_input("品牌推廣人數", min_value=0, value=0, key="brand_input")
             extra_cls = st.number_input("補開課程次數", min_value=0, value=0, key="extra_cls")
         
         st.markdown("### 2. 回流與升級項目")
         col_c, col_d = st.columns(2)
-        
         with col_c:
             st.write("回流人數 (STP-T)")
             l_10 = st.number_input("10堂人數", min_value=0, value=0, key="loyalty_10")
@@ -635,7 +581,6 @@ else:
             l_30 = st.number_input("30堂人數", min_value=0, value=0, key="loyalty_30")
             l_40 = st.number_input("40堂人數", min_value=0, value=0, key="loyalty_40")
             loyalty_dict = {"10堂": l_10, "20堂": l_20, "30堂": l_30, "40堂": l_40}
-        
         with col_d:
             st.write("結構升級次數")
             u_12_13 = st.number_input("1對2變1對3(次)", min_value=0, value=0, key="upgrade_1213")
@@ -643,21 +588,15 @@ else:
             u_class = st.number_input("包班成立(次)", min_value=0, value=0, key="upgrade_class")
             upgrade_dict = {"1對2變1對3": u_12_13, "團課變期班": u_group, "包班成立": u_class}
         
-        # 計算結果
         res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, is_ft, brand_input, revenue_tier)
-        
         st.divider()
         main_col1, main_col2 = st.columns(2)
-        with main_col1:
-            st.metric("當月預計總獎金", f"{res[0]} 元")
+        with main_col1: st.metric("當月預計總獎金", f"{res[0]} 元")
         with main_col2:
-            if revenue_tier != "不列入計算":
-                st.info(f"包含個人業績獎金 ({revenue_tier}): {res[8]} 元")
+            if revenue_tier != "不列入計算": st.info(f"包含個人業績獎金 ({revenue_tier}): {res[8]} 元")
         
-        # 匯出按鈕
         if st.button("產生並下載結算報表"):
-            if not name or name.strip() == "":
-                st.error("請輸入小編姓名")
+            if not name or name.strip() == "": st.error("請輸入小編姓名")
             else:
                 meta = {"館別": gym, "小編姓名": name, "報表日期": date_str}
                 excel_file = generate_matrix_excel(
