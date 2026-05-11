@@ -43,6 +43,36 @@ if st.session_state.role is None:
             if st.button("小編登入", key="editor_btn", use_container_width=True):
                 st.session_state.role = "editor"
                 st.rerun()
+        with col_btn3:
+            if st.button("美編登入", key="designer_btn", use_container_width=True):
+                st.session_state.role = "designer"
+                st.rerun()
+
+        with col_btn4:
+            if st.button("財務登入", key="finance_btn", use_container_width=True):
+                st.session_state.show_finance_login = True
+
+        # 財務密碼驗證區塊
+        if st.session_state.get("show_finance_login", False):
+            st.markdown("<br>", unsafe_allow_html=True)
+            password = st.text_input(
+                "請輸入財務密碼",
+                type="password",
+                key="finance_password_input"
+            )
+            col_confirm, col_cancel = st.columns(2)
+            with col_confirm:
+                if st.button("確認", key="finance_confirm_btn", use_container_width=True):
+                    if password == "20260512":
+                        st.session_state.role = "finance"
+                        st.session_state.show_finance_login = False
+                        st.rerun()
+                    else:
+                        st.error("密碼錯誤，請重試")
+            with col_cancel:
+                if st.button("取消", key="finance_cancel_btn", use_container_width=True):
+                    st.session_state.show_finance_login = False
+                    st.rerun()
 
 # ========================
 # 步驟 2: 功能選擇
