@@ -405,14 +405,17 @@ else:
                 
                 df_new = df_base[df_base["備註"].str.contains("新購|首購")].copy()
                 df_renew = df_base[df_base["備註"].str.contains("續購")].copy()
+                df_trial = df_base[df_base["備註"].str.contains("體驗")].copy()
                 
                 df_new = df_new.sort_values(by="業績人員").reset_index(drop=True)
                 df_renew = df_renew.sort_values(by="業績人員").reset_index(drop=True)
+                df_trial = df_trial.sort_values(by="業績人員").reset_index(drop=True)
                 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_new.to_excel(writer, sheet_name='新購首購', index=False)
-                    df_renew.to_excel(writer, sheet_name='續購', index=False)
+                    df_new.to_excel(writer, sheet_name='個績', index=False)
+                    df_renew.to_excel(writer, sheet_name='團績', index=False)
+                    df_trial.to_excel(writer, sheet_name='體驗', index=False)
                 
                 st.download_button(
                     label="下載轉換後報表 (Excel)",
