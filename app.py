@@ -10,7 +10,7 @@ import numpy as np
 # ========================
 # 頁面設定
 # ========================
-st.set_page_config(page_title="春不老薪資計算系統", layout="wide")
+st.set_page_config(page_title="春不老統計系統", layout="wide")
 
 # ========================
 # Session State 初始化
