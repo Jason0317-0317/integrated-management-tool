@@ -71,7 +71,7 @@ if st.session_state.role is None:
             col_confirm, col_cancel = st.columns(2)
             with col_confirm:
                 # 取得使用者輸入的 password 後
-            if st.button("確認", key="finance_confirm_btn", use_container_width=True):
+                if st.button("確認", key="finance_confirm_btn", use_container_width=True):
         # 直接比對字串
         if password == "20260512":
             st.session_state.role = "finance"
