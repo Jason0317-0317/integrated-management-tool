@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
@@ -59,31 +59,57 @@ if st.session_state.role is None:
         with col_btn4:
             if st.button("財務登入", key="finance_btn", use_container_width=True):
                 st.session_state.show_finance_login = True
-
+        
+        if "retry_count" not in st.session_state:
+            st.session_state.retry_count = 0
+        if "lockout_time" not in st.session_state:
+            st.session_state.lockout_time = None
         # 財務密碼驗證區塊
         if st.session_state.get("show_finance_login", False):
             st.markdown("<br>", unsafe_allow_html=True)
-            password = st.text_input(
-                "請輸入財務密碼",
-                type="password",
-                key="finance_password_input"
-            )
-            col_confirm, col_cancel = st.columns(2)
-            with col_confirm:
-                # 取得使用者輸入的 password 後
-                if st.button("確認", key="finance_confirm_btn", use_container_width=True):
-        # 直接比對字串
-                    if password == "20260512":
-                        st.session_state.role = "finance"
+            is_locked = False
+            if st.session_state.retry_count >= 3:
+                # 計算距離上次錯誤過了多久
+                time_diff = datetime.now() - st.session_state.lockout_time
+                if time_diff < timedelta(minutes=5):
+                    remaining_time = 5 - int(time_diff.total_seconds() // 60)
+                    st.error(f"密碼錯誤次數過多，請休息 {remaining_time} 分鐘後再嘗試。")
+                    is_locked = True
+                    if st.button("返回", key="lockout_back_btn", use_container_width=True):
                         st.session_state.show_finance_login = False
                         st.rerun()
-                    else:
-                        st.error("密碼錯誤，請重試")
-            with col_cancel:
-                if st.button("取消", key="finance_cancel_btn", use_container_width=True):
-                    st.session_state.show_finance_login = False
-                    st.rerun()
-
+                else:
+                    # 超過 5 分鐘，重置次數
+                    st.session_state.retry_count = 0
+                    st.session_state.lockout_time = None
+            if not is_locked:
+                password = st.text_input(
+                    f"請輸入財務密碼 (剩餘嘗試次數: {3 - st.session_state.retry_count})",
+                    type="password",
+                    key="finance_password_input"
+                )
+                col_confirm, col_cancel = st.columns(2)
+                with col_confirm:
+                    if st.button("確認", key="finance_confirm_btn", use_container_width=True):
+                        if password == "20260512":
+                            st.session_state.role = "finance"
+                            st.session_state.show_finance_login = False
+                            st.session_state.retry_count = 0  # 成功後重置
+                            st.session_state.lockout_time = None
+                            st.success("登入成功！")
+                            st.rerun()
+                        else:
+                            st.session_state.retry_count += 1
+                            if st.session_state.retry_count >= 3:
+                                st.session_state.lockout_time = datetime.now()
+                                st.error("錯誤達 3 次，系統已暫時鎖定 5 分鐘")
+                            else:
+                                st.error(f"密碼錯誤！剩餘次數: {3 - st.session_state.retry_count}")
+                            st.rerun() # 立即更新頁面顯示錯誤次數
+                with col_cancel:
+                    if st.button("取消", key="finance_cancel_btn", use_container_width=True):
+                        st.session_state.show_finance_login = False
+                        st.rerun()
 # ========================
 # 步驟 2: 功能選擇
 # ========================
