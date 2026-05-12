@@ -70,16 +70,15 @@ if st.session_state.role is None:
             )
             col_confirm, col_cancel = st.columns(2)
             with col_confirm:
-                if st.button("確認", key="finance_confirm_btn", use_container_width=True):
-                    finance_password = os.getenv("20260512")
-                    if not finance_password:
-                        st.error("密碼錯誤，請重試")
-                    elif password == finance_password:
-                        st.session_state.role = "finance"
-                        st.session_state.show_finance_login = False
-                        st.rerun()
-                    else:
-                        st.error("系統尚未設定財務密碼，請聯繫管理員")
+                # 取得使用者輸入的 password 後
+        if st.button("確認", key="finance_confirm_btn", use_container_width=True):
+        # 直接比對字串
+        if password == "20260512":
+            st.session_state.role = "finance"
+            st.session_state.show_finance_login = False
+            st.rerun()
+        else:
+            st.error("密碼錯誤，請重試")
             with col_cancel:
                 if st.button("取消", key="finance_cancel_btn", use_container_width=True):
                     st.session_state.show_finance_login = False
