@@ -185,7 +185,7 @@ else:
     # ===== 預約報表統計 =====
     if st.session_state.feature == "lesson_report":
         st.title("教練堂數統計")
-        st.markdown("請上傳原始團體課預約報表，系統將自動提取並整理為指定格式。")
+        st.markdown("請上傳團體課預約報表。")
         
         # 1. 定義老師排序順序與轉換字典
         NAME_CONVERSION = {
@@ -377,10 +377,10 @@ else:
             except Exception as e:
                 st.error(f"處理過程中發生錯誤: {e}")
 
-    # ===== 業績報表自動化轉換工具 =====
+    # ===== 團績個績統計工具 =====
     elif st.session_state.feature == "sales_report":
-        st.title("業績報表自動化轉換工具")
-        st.markdown("請上傳原始交易報表，系統將自動提取並整理為指定格式。")
+        st.title("團績個績統計")
+        st.markdown("請上傳交易報表。")
         
         uploaded_file = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="sales_uploader")
         
@@ -475,7 +475,7 @@ else:
     # ===== 出勤明細統計 (新功能) =====
     elif st.session_state.feature == "attendance_report":
         st.title("出勤明細統計")
-        st.markdown("上傳原始 Excel 進出場記錄，系統將自動生成統計報表。")
+        st.markdown("上傳進出場記錄。")
         
         uploaded_file = st.file_uploader("選擇原始 Excel 進出場記錄檔案", type=["xlsx"], key="attendance_uploader")
         
