@@ -64,7 +64,7 @@ if st.session_state.role is None:
         if st.session_state.get("show_finance_login", False):
             st.markdown("<br>", unsafe_allow_html=True)
             password = st.text_input(
-                "請輸入財務密碼",
+                "20260512",
                 type="password",
                 key="finance_password_input"
             )
