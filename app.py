@@ -1,11 +1,16 @@
 import streamlit as st
 import pandas as pd
 import io
+import os
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 import numpy as np
+from dotenv import load_dotenv
+
+# 載入環境變數
+load_dotenv()
 
 # ========================
 # 頁面設定
@@ -66,7 +71,10 @@ if st.session_state.role is None:
             col_confirm, col_cancel = st.columns(2)
             with col_confirm:
                 if st.button("確認", key="finance_confirm_btn", use_container_width=True):
-                    if password == "20260512":
+                    finance_password = os.getenv("FINANCE_PASSWORD")
+                    if not finance_password:
+                        st.error("系統尚未設定財務密碼，請聯繫管理員")
+                    elif password == finance_password:
                         st.session_state.role = "finance"
                         st.session_state.show_finance_login = False
                         st.rerun()
@@ -135,7 +143,9 @@ elif st.session_state.feature is None:
             st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            st.info("財務功能開發中，敬請期待。")
+            if st.button("教練薪資結算", key="coach_salary_btn", use_container_width=True):
+                st.session_state.feature = "coach_salary"
+                st.rerun()
 
 # ========================
 # 步驟 3: 顯示功能
@@ -662,3 +672,300 @@ else:
                     file_name=f"{name}_獎金結算_{date_str}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+    # ===== 教練薪資結算系統 =====
+    elif st.session_state.feature == "coach_salary":
+        def generate_perfect_salary_report(uploaded_files, special_bonus_df):
+            COACH_PRICING = {
+                "林意潔": {"團1-2人": 800, "團3人": 900, "團4人": 900, "團5人": 950, "團6人": 1000, "1對2(1.5hr)": 1275, "1對2": 850, "1對1(1.5hr)": 1275, "1對1": 850},
+                "陳秀蓉": {"團1-2人": 800, "團3人": 850, "團4人": 850, "團5人": 900, "團6人": 950, "1對2(1.5hr)": 1200, "1對2": 800, "1對1(1.5hr)": 1200, "1對1": 800},
+                "陳怡廷": {"團1-2人": 800, "團3人": 850, "團4人": 900, "團5人": 950, "團6人": 1000, "1對2(1.5hr)": 1275, "1對2": 850, "1對1(1.5hr)": 1275, "1對1": 850},
+                "鍾佳蓁 Rita": {"團1-2人": 900, "團3人": 950, "團4人": 1000, "團5人": 1050, "團6人": 1100, "1對2(1.5hr)": 1425, "1對2": 950, "1對1(1.5hr)": 1425, "1對1": 950},
+                "黃宛婷": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "楊子慧(小在)": {"團1-2人": 650, "團3人": 800, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1050, "1對2": 700, "1對1(1.5hr)": 1050, "1對1": 700},
+                "許力尹 LOUIS": {"團1-2人": 600, "團3人": 800, "團4人": 800, "團5人": 800, "團6人": 800, "1對2(1.5hr)": 1200, "1對2": 800, "1對1(1.5hr)": 1200, "1對1": 800},
+                "顥顥": {"團1-2人": 0, "團3人": 1000, "團4人": 1000, "團5人": 1100, "團6人": 1100, "1對2(1.5hr)": 1500, "1對2": 1000, "1對1(1.5hr)": 1500, "1對1": 1000},
+                "洪睿絃": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "紀儒蓁": {"團1-2人": 700, "團3人": 800, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "李翎瑋": {"團1-2人": 800, "團3人": 850, "團4人": 900, "團5人": 950, "團6人": 1000, "1對2(1.5hr)": 1275, "1對2": 850, "1對1(1.5hr)": 1275, "1對1": 850},
+                "郭奕伶": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 750, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "郭品均": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "邴妍語": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "張鈞弼": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 850, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "蕭竣升": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "紀萃文": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "李函豫": {"團1-2人": 600, "團3人": 650, "團4人": 700, "團5人": 750, "團6人": 800, "1對2(1.5hr)": 975, "1對2": 650, "1對1(1.5hr)": 975, "1對1": 650},
+                "尤子綺": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 750, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "張楷翌": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "侯懿庭": {"團1-2人": 700, "團3人": 750, "團4人": 800, "團5人": 850, "團6人": 900, "1對2(1.5hr)": 1125, "1對2": 750, "1對1(1.5hr)": 1125, "1對1": 750},
+                "謝俐池": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 750, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "黃姿菁": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 750, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "籃郁雯": {"團1-2人": 550, "團3人": 600, "團4人": 700, "團5人": 700, "團6人": 700, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "徐漫": {"團1-2人": 500, "團3人": 550, "團4人": 600, "團5人": 650, "團6人": 700, "1對2(1.5hr)": 825, "1對2": 550, "1對1(1.5hr)": 825, "1對1": 550},
+                "鄭筠馨": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 750, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "高舒涵": {"團1-2人": 550, "團3人": 600, "團4人": 650, "團5人": 700, "團6人": 750, "1對2(1.5hr)": 900, "1對2": 600, "1對1(1.5hr)": 900, "1對1": 600},
+                "邱靜瑜": {"團1-2人": 600, "團3人": 650, "團4人": 700, "團5人": 750, "團6人": 800, "1對2(1.5hr)": 975, "1對2": 650, "1對1(1.5hr)": 975, "1對1": 650}
+            }
+            NAME_CONVERSION = {
+                "意潔": "林意潔", "Cammy": "陳怡廷", "Vivi": "陳秀蓉", "怡廷": "陳怡廷", "佳蓁": "鍾佳蓁 Rita", "宛婷": "黃宛婷", "WanTing": "黃宛婷",
+                "小在": "楊子慧(小在)", "Jae": "楊子慧(小在)", "LOUIS": "許力尹 LOUIS", "顥顥": "顥顥", "睿絃": "洪睿絃", "儒蓁": "紀儒蓁",
+                "翎瑋": "李翎瑋", "奕伶": "郭奕伶", "品均": "郭品均", "妍語": "邴妍語", "鈞弼": "張鈞弼",
+                "竣升": "蕭竣升", "萃萃": "紀萃文", "函豫": "李函豫", "Hanny": "李函豫", "子綺": "尤子綺", "Yuli": "尤子綺", "楷翌": "張楷翌", "Eric": "張楷翌",
+                "懿庭": "侯懿庭", "Yvonne Hou": "侯懿庭", "俐池": "謝俐池", "Grace Hsieh": "謝俐池", "姿菁": "黃姿菁", "郁雯": "籃郁雯", "徐漫": "徐漫", "mandy": "徐漫",
+                "筠馨": "鄭筠馨", "舒涵": "高舒涵", "靜瑜": "邱靜瑜"
+            }
+            SENIORITY_DATA = {
+                "林意潔": "兩年以上", "陳秀蓉": "兩年以上", "陳怡廷": "兩年以上", "鍾佳蓁 Rita": "兩年以上",
+                "黃宛婷": "一年以上至兩年以下", "楊子慧(小在)": "兩年以上", "許力尹 LOUIS": "一年以上至兩年以下",
+                "顥顥": "一年以上至兩年以下", "洪睿絃": "一年以上至兩年以下", "紀儒蓁": "兩年以上",
+                "李翎瑋": "一年以上至兩年以下", "郭奕伶": "一年以上至兩年以下", "郭品均": "一年以上至兩年以下",
+                "邴妍語": "一年以上至兩年以下", "張鈞弼": "一年以上至兩年以下", "蕭竣升": "一年以上至兩年以下",
+                "紀萃文": "一年以上至兩年以下", "李函豫": "一年以上至兩年以下", "尤子綺": "一年以下",
+                "張楷翌": "一年以上至兩年以下", "侯懿庭": "一年以下", "謝俐池": "一年以下",
+                "黃姿菁": "一年以下", "籃郁雯": "一年以下", "徐漫": "一年以下",
+                "鄭筠馨": "一年以下", "高舒涵": "一年以下", "邱靜瑜": "一年以下"
+            }
+            
+            display_course_types = ["團1-2人", "團3人", "團4人", "團5人", "團6人", "1對2(1.5hr)", "1對2", "1對1(1.5hr)", "1對1"]
+            
+            columns = [
+                "教練_L", "課程_L", "單價_L", "義昌館堂數", "義昌館金額", "高美館堂數", "高美館金額", "中山館堂數", "中山館金額", "三館總堂數", "三館總金額",
+                "應付金額_L", "三館獎金(春不老)_堂數達標獎金_L", "三館特別獎金_L", "總計_L", "執行業務_L", "補充保費_L", "應付薪資_L",
+                "教練_R", "課程_R", "單價_R", "巨蛋館堂數", "巨蛋館金額",
+                "應付金額_R", "巨蛋獎金_堂數達標獎金_R", "巨蛋特別獎金_R", "總計_R", "執行業務_R", "補充保費_R", "應付薪資_R", "備註"
+            ]
+            
+            all_rows = []
+            for coach in COACH_PRICING.keys():
+                for course in display_course_types:
+                    row = {col: 0 for col in columns}
+                    row["教練_L"], row["課程_L"], row["單價_L"] = coach, course, COACH_PRICING[coach].get(course, 0)
+                    row["教練_R"], row["課程_R"], row["單價_R"] = coach, course, COACH_PRICING[coach].get(course, 0)
+                    row["備註"] = ""
+                    all_rows.append(row)
+            df_master = pd.DataFrame(all_rows)
+            
+            for file in uploaded_files:
+                file.seek(0)
+                df_info = pd.read_excel(file, sheet_name='統計總表', nrows=1, header=None)
+                loc_name = str(df_info.iloc[0, 1]).strip()
+                
+                file.seek(0)
+                df_raw = pd.read_excel(file, sheet_name='統計總表', skiprows=3).fillna(0)
+                df_raw = df_raw.set_index(df_raw.columns[0]).transpose()
+                df_raw.index.name = '姓名'
+                df_stats = df_raw.reset_index()
+
+                for _, s_row in df_stats.iterrows():
+                    raw_excel_name = str(s_row['姓名']).strip()
+                    if raw_excel_name == '合計' or not raw_excel_name or 'Unnamed' in raw_excel_name:
+                        continue
+                    mapped_name = None
+                    if raw_excel_name in COACH_PRICING:
+                        mapped_name = raw_excel_name
+                    else:
+                        mapped_name = NAME_CONVERSION.get(raw_excel_name)
+                        if not mapped_name:
+                            for coach_full_name in COACH_PRICING.keys():
+                                if raw_excel_name in coach_full_name or coach_full_name in raw_excel_name:
+                                    mapped_name = coach_full_name
+                                    break
+                    if not mapped_name: continue
+                    coach_mask = (df_master["教練_L"] == mapped_name)
+                    for course in display_course_types:
+                        val = 0
+                        if course == "團1-2人":
+                            val = s_row.get("團1人", 0) + s_row.get("團2人", 0)
+                        else:
+                            val = s_row.get(course, 0)
+                        if val == 0: continue
+                        target_mask = coach_mask & (df_master["課程_L"] == course)
+                        unit_price = COACH_PRICING.get(mapped_name, {}).get(course, 0)
+                        if loc_name == "巨蛋館":
+                            df_master.loc[target_mask, "巨蛋館堂數"] = val
+                            df_master.loc[target_mask, "巨蛋館金額"] = val * unit_price
+                        else:
+                            s_col, a_col = f"{loc_name}堂數", f"{loc_name}金額"
+                            if s_col in df_master.columns:
+                                df_master.loc[target_mask, s_col] += val
+                                df_master.loc[target_mask, a_col] += val * unit_price
+
+            bonus_summary = []
+            coach_bonus_map_s3 = {} 
+            coach_bonus_map_sd = {} 
+            cat1_list = ["團1-2人", "1對2(1.5hr)", "1對2", "1對1(1.5hr)", "1對1"]
+            cat2_list = ["團3人", "團4人", "團5人", "團6人"]
+            RATIO_CONFIG = {
+                "兩年以上": {"門檻": 110, "1-2人": 0.64, "3-6人": 0.36},
+                "一年以上至兩年以下": {"門檻": 90, "1-2人": 0.67, "3-6人": 0.33},
+                "一年以下": {"門檻": 50, "1-2人": 0.60, "3-6人": 0.40}
+            }
+            for coach in COACH_PRICING.keys():
+                c_data = df_master[df_master["教練_L"] == coach]
+                seniority = SENIORITY_DATA.get(coach, "一年以下")
+                config = RATIO_CONFIG.get(seniority, RATIO_CONFIG["一年以下"])
+                total_classes = c_data[["義昌館堂數", "高美館堂數", "中山館堂數", "巨蛋館堂數"]].sum().sum()
+                actual_sum1 = c_data.loc[c_data["課程_L"].isin(cat1_list), ["義昌館堂數", "高美館堂數", "中山館堂數", "巨蛋館堂數"]].sum().sum()
+                actual_sum2 = c_data.loc[c_data["課程_L"].isin(cat2_list), ["義昌館堂數", "高美館堂數", "中山館堂數", "巨蛋館堂數"]].sum().sum()
+                actual_ratio1 = actual_sum1 / total_classes if total_classes > 0 else 0
+                actual_ratio2 = actual_sum2 / total_classes if total_classes > 0 else 0
+                detail_text, b1, b2, b1_s3, b1_sd, b2_s3, b2_sd, ex_classes_cat1, ex_classes_cat2 = "", 0, 0, 0, 0, 0, 0, 0, 0
+                if total_classes > config["門檻"]:
+                    excess_total = total_classes - config["門檻"]
+                    if actual_ratio1 >= config["1-2人"]:
+                        ex_classes_cat1 = round(excess_total * actual_ratio1)
+                        b1 = (min(ex_classes_cat1, 10) * 40) + (max(0, ex_classes_cat1 - 10) * 50)
+                        subset1 = c_data[c_data["課程_L"].isin(cat1_list)]
+                        s1_s3, s1_sd = subset1[["義昌館堂數", "高美館堂數", "中山館堂數"]].sum().sum(), subset1["巨蛋館堂數"].sum()
+                        s1_total = s1_s3 + s1_sd
+                        if s1_total > 0:
+                            b1_s3, b1_sd = round(b1 * (s1_s3 / s1_total)), round(b1 * (s1_sd / s1_total))
+                    else: detail_text += "1-2人佔比未達標; "
+                    if actual_ratio2 >= config["3-6人"]:
+                        ex_classes_cat2 = round(excess_total * actual_ratio2)
+                        if seniority == "兩年以上": b2 = (min(ex_classes_cat2, 10) * 60) + (max(0, ex_classes_cat2 - 10) * 80)
+                        else: b2 = (min(ex_classes_cat2, 10) * 50) + (min(max(0, ex_classes_cat2 - 10), 10) * 80) + (max(0, ex_classes_cat2 - 20) * 100)
+                        subset2 = c_data[c_data["課程_L"].isin(cat2_list)]
+                        s2_s3, s2_sd = subset2[["義昌館堂數", "高美館堂數", "中山館堂數"]].sum().sum(), subset2["巨蛋館堂數"].sum()
+                        s2_total = s2_s3 + s2_sd
+                        if s2_total > 0:
+                            b2_s3, b2_sd = round(b2 * (s2_s3 / s2_total)), round(b2 * (s2_sd / s2_total))
+                    else: detail_text += "3-6人佔比未達標; "
+                    if seniority == "一年以下":
+                        extra_bonus = 2000 if excess_total >= 5 else 1000
+                        if (b1 + b2) < extra_bonus:
+                            detail_text += f"取保底 {extra_bonus}; "
+                            b1, b2 = extra_bonus * config["1-2人"], extra_bonus * config["3-6人"]
+                            subset1, subset2 = c_data[c_data["課程_L"].isin(cat1_list)], c_data[c_data["課程_L"].isin(cat2_list)]
+                            s1_s3, s1_sd = subset1[["義昌館堂數", "高美館堂數", "中山館堂數"]].sum().sum(), subset1["巨蛋館堂數"].sum()
+                            s2_s3, s2_sd = subset2[["義昌館堂數", "高美館堂數", "中山館堂數"]].sum().sum(), subset2["巨蛋館堂數"].sum()
+                            if (s1_s3 + s1_sd) > 0: b1_s3, b1_sd = round(b1 * (s1_s3 / (s1_s3 + s1_sd))), round(b1 * (s1_sd / (s1_s3 + s1_sd)))
+                            if (s2_s3 + s2_sd) > 0: b2_s3, b2_sd = round(b2 * (s2_s3 / (s2_s3 + s2_sd))), round(b2 * (s2_sd / (s2_s3 + s2_sd)))
+                coach_bonus_map_s3[coach], coach_bonus_map_sd[coach] = round(b1_s3 + b2_s3), round(b1_sd + b2_sd)
+                bonus_val = round(b1 + b2)
+                if not detail_text: detail_text = f"總超額 {round(excess_total if total_classes > config['門檻'] else 0)} 堂"
+                for label, categories in [("1人至2人", cat1_list), ("3人至6人", cat2_list)]:
+                    subset = c_data[c_data["課程_L"].isin(categories)]
+                    s3, sd = round(subset[["義昌館堂數", "高美館堂數", "中山館堂數"]].sum().sum()), round(subset["巨蛋館堂數"].sum())
+                    st_val = s3 + sd
+                    bonus_summary.append({
+                        "教練姓名": coach, "課程人數": label,"三館總堂數": s3, "巨蛋館堂數": sd, "四館總堂數": st_val,
+                        "級距達標門檻": f"{round(config['1-2人']*100 if label=='1人至2人' else config['3-6人']*100)}%", 
+                        "個別超標堂數": round(ex_classes_cat1 if label == "1人至2人" else ex_classes_cat2),
+                        "總堂數門檻": config["門檻"] if label == "1人至2人" else "", "計算明細": detail_text if label == "1人至2人" else "",
+                        "級距分配獎金": round(b1 if label == "1人至2人" else b2), "合計總獎金": bonus_val if label == "1人至2人" else "",
+                        "三館獎金(春不老)": b1_s3 if label == "1人至2人" else b2_s3, "巨蛋獎金": b1_sd if label == "1人至2人" else b2_sd, "年資": seniority
+                    })
+                bonus_summary.append({k: "" for k in ["教練姓名", "四館總堂數", "個別超標堂數", "總堂數門檻", "計算明細", "級距分配獎金", "合計總獎金", "三館獎金(春不老)", "巨蛋獎金", "年資"]})
+            
+            final_dfs, spec_bonus_map = [], special_bonus_df.set_index("教練姓名").to_dict('index')
+            for coach in COACH_PRICING.keys():
+                c_df = df_master[df_master["教練_L"] == coach].copy()
+                bonus_s3, bonus_sd = coach_bonus_map_s3.get(coach, 0), coach_bonus_map_sd.get(coach, 0)
+                s_bonus_s3, s_bonus_sd = int(spec_bonus_map.get(coach, {}).get("三館特別獎金(加項)", 0)), int(spec_bonus_map.get(coach, {}).get("巨蛋特別獎金(加項)", 0))
+                remark = spec_bonus_map.get(coach, {}).get("備註", "")
+                c_df["三館總堂數"], c_df["三館總金額"] = c_df[["義昌館堂數", "高美館堂數", "中山館堂數"]].sum(axis=1), c_df[["義昌館金額", "高美館金額", "中山館金額"]].sum(axis=1)
+                total_L_lessons = round(c_df["三館總金額"].sum())
+                total_L_sum = total_L_lessons + bonus_s3 + s_bonus_s3
+                tax_L, health_L = (round(total_L_sum * 0.1) if total_L_sum >= 20000 else 0), (round(total_L_sum * 0.0211) if total_L_sum >= 20000 else 0)
+                pay_L = total_L_sum - tax_L - health_L
+                total_R_lessons = round(c_df["巨蛋館金額"].sum())
+                total_R_sum = total_R_lessons + bonus_sd + s_bonus_sd
+                tax_R, health_R = (round(total_R_sum * 0.1) if total_R_sum >= 20000 else 0), (round(total_R_sum * 0.0211) if total_R_sum >= 20000 else 0)
+                pay_R = total_R_sum - tax_R - health_R
+                c_df["應付金額_L"], c_df["三館獎金(春不老)_堂數達標獎金_L"], c_df["三館特別獎金_L"], c_df["總計_L"] = total_L_lessons, bonus_s3, s_bonus_s3, total_L_sum
+                c_df["執行業務_L"], c_df["補充保費_L"], c_df["應付薪資_L"] = tax_L, health_L, pay_L
+                c_df["應付金額_R"], c_df["巨蛋獎金_堂數達標獎金_R"], c_df["巨蛋特別獎金_R"], c_df["總計_R"] = total_R_lessons, bonus_sd, s_bonus_sd, total_R_sum
+                c_df["執行業務_R"], c_df["補充保費_R"], c_df["應付薪資_R"], c_df["備註"] = tax_R, health_R, pay_R, remark
+                final_dfs.append(c_df)
+                sub_row = {col: 0 for col in columns}
+                sub_row["教練_L"], sub_row["課程_L"], sub_row["教練_R"], sub_row["課程_R"] = coach, "小計", coach, "小計"
+                for gym in ["義昌館", "高美館", "中山館", "巨蛋館"]:
+                    sub_row[f"{gym}堂數"], sub_row[f"{gym}金額"] = round(c_df[f"{gym}堂數"].sum()), round(c_df[f"{gym}金額"].sum())
+                sub_row["三館總堂數"], sub_row["三館總金額"] = round(c_df["三館總堂數"].sum()), round(c_df["三館總金額"].sum())
+                sub_row["應付金額_L"], sub_row["三館獎金(春不老)_堂數達標獎金_L"], sub_row["三館特別獎金_L"], sub_row["總計_L"] = total_L_lessons, bonus_s3, s_bonus_s3, total_L_sum
+                sub_row["執行業務_L"], sub_row["補充保費_L"], sub_row["應付薪資_L"] = tax_L, health_L, pay_L
+                sub_row["應付金額_R"], sub_row["巨蛋獎金_堂數達標獎金_R"], sub_row["巨蛋特別獎金_R"], sub_row["總計_R"] = total_R_lessons, bonus_sd, s_bonus_sd, total_R_sum
+                sub_row["執行業務_R"], sub_row["補充保費_R"], sub_row["應付薪資_R"], sub_row["備註"] = tax_R, health_R, pay_R, remark
+                final_dfs.append(pd.DataFrame([sub_row]))
+            df_final = pd.concat(final_dfs, ignore_index=True)[columns]
+            subtotal_rows = df_final[df_final["課程_L"] == "小計"]
+            three_bonus_pool, dome_bonus_pool = subtotal_rows["三館獎金(春不老)_堂數達標獎金_L"].sum(), subtotal_rows["巨蛋獎金_堂數達標獎金_R"].sum()
+            yi_amt, gao_amt, zhong_amt, dome_amt = subtotal_rows["義昌館金額"].sum(), subtotal_rows["高美館金額"].sum(), subtotal_rows["中山館金額"].sum(), subtotal_rows["巨蛋館金額"].sum()
+            three_amt_sum, four_amt_sum = yi_amt + gao_amt + zhong_amt, yi_amt + gao_amt + zhong_amt + dome_amt
+            yi_cnt, gao_cnt, zhong_cnt, dome_cnt = subtotal_rows["義昌館堂數"].sum(), subtotal_rows["高美館堂數"].sum(), subtotal_rows["中山館堂數"].sum(), subtotal_rows["巨蛋館堂數"].sum()
+            three_cnt_sum, four_cnt_sum = yi_cnt + gao_cnt + zhong_cnt, yi_cnt + gao_cnt + zhong_cnt + dome_cnt
+            def calc_ratio_str(part, total): return f"{ (part / total * 100):.2f}%" if total > 0 else "0.00%"
+            def get_bonus_share(part_cnt, total_cnt, total_bonus): return round(total_bonus * (part_cnt / total_cnt)) if total_cnt > 0 else 0
+            summary_rows = [
+                ["義昌:", yi_amt, round(yi_amt * 1.05), calc_ratio_str(yi_amt, four_amt_sum), yi_cnt, calc_ratio_str(yi_cnt, four_cnt_sum), get_bonus_share(yi_cnt, three_cnt_sum, three_bonus_pool), "", 0, 0],
+                ["高美:", gao_amt, round(gao_amt * 1.05), calc_ratio_str(gao_amt, four_amt_sum), gao_cnt, calc_ratio_str(gao_cnt, four_cnt_sum), get_bonus_share(gao_cnt, three_cnt_sum, three_bonus_pool), "", 0, 0],
+                ["中山:", zhong_amt, round(zhong_amt * 1.05), calc_ratio_str(zhong_amt, four_amt_sum), zhong_cnt, calc_ratio_str(zhong_cnt, four_cnt_sum), get_bonus_share(zhong_cnt, three_cnt_sum, three_bonus_pool), "", 0, 0],
+                ["三館合計:", three_amt_sum, round(three_amt_sum * 1.05), calc_ratio_str(three_amt_sum, four_amt_sum), three_cnt_sum, calc_ratio_str(three_cnt_sum, four_cnt_sum), three_bonus_pool, "", 0, 0],
+                ["巨蛋:", dome_amt, round(dome_amt * 1.05), calc_ratio_str(dome_amt, four_amt_sum), dome_cnt, calc_ratio_str(dome_cnt, four_cnt_sum), dome_bonus_pool, "", 0, 0],
+                ["四館合計:", four_amt_sum, round(four_amt_sum * 1.05), calc_ratio_str(four_amt_sum, four_amt_sum), four_cnt_sum, calc_ratio_str(four_cnt_sum, four_cnt_sum), three_bonus_pool + dome_bonus_pool, "", 0, 0]
+            ]
+            df_summary = pd.DataFrame(summary_rows, columns=["", "營收(未稅)", "營收(含稅)", "營收比例", "堂數", "堂數比例", "堂數達標獎金", "各館薪資比例", "教練平均單價", "完課人數"])
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df_final.to_excel(writer, index=False, sheet_name='薪資清單')
+                pd.DataFrame(bonus_summary).to_excel(writer, index=False, sheet_name='堂數達標獎金')
+                df_summary.to_excel(writer, index=False, sheet_name='統計總表')
+                thin, center = Side(style='thin'), Alignment(horizontal='center', vertical='center')
+                border, header_fill, sub_fill, red_font = Border(top=thin, left=thin, right=thin, bottom=thin), PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"), PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid"), Font(color="FF0000", bold=True)
+                ws = writer.sheets['薪資清單']
+                display_headers = ["教練", "課程", "單價", "義昌館堂數", "義昌館金額", "高美館堂數", "高美館金額", "中山館堂數", "中山館金額", "三館總堂數", "三館總金額", "應付金額", "三館獎金(春不老)_堂數達標獎金(加項)", "三館特別獎金(加項)", "總計", "執行業務(扣款)", "補充保費(扣款)", "應付薪資", "教練", "課程", "單價", "巨蛋館堂數", "巨蛋館金額", "應付金額", "巨蛋獎金_堂數達標獎金(加項)", "巨蛋特別獎金(加項)", "總計", "執行業務(扣款)", "補充保費(扣款)", "應付薪資", "備註"]
+                for i, h in enumerate(display_headers): ws.cell(row=1, column=i+1).value = h
+                for cell in ws[1]: cell.fill, cell.font, cell.alignment, cell.border = header_fill, Font(bold=True), center, border
+                merge_cols, start_r = [1, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 27, 28, 29, 30, 31], 2
+                for r in range(2, ws.max_row + 1):
+                    curr_coach, curr_course = ws.cell(row=r, column=1).value, ws.cell(row=r, column=2).value
+                    next_coach = ws.cell(row=r + 1, column=1).value if r < ws.max_row else None
+                    is_sub = (curr_course == "小計")
+                    for c in range(1, ws.max_column + 1):
+                        cell = ws.cell(row=r, column=c)
+                        cell.border, cell.alignment = border, center
+                        if is_sub: cell.fill = sub_fill
+                    if next_coach != curr_coach:
+                        if r >= start_r:
+                            for c in merge_cols:
+                                ws.merge_cells(start_row=start_r, start_column=c, end_row=r, end_column=c)
+                                ws.cell(row=start_r, column=c).alignment = center
+                        start_r = r + 1
+                for col in ws.columns: ws.column_dimensions[col[0].column_letter].width = 12
+                ws.column_dimensions['M'].width, ws.column_dimensions['X'].width, ws.column_dimensions['AE'].width = 35, 30, 30
+                ws_bonus = writer.sheets['堂數達標獎金']
+                for row in ws_bonus.iter_rows(min_row=1, max_row=ws_bonus.max_row):
+                    for cell in row:
+                        cell.alignment, cell.border = center, border
+                        if cell.row == 1: cell.fill, cell.font = header_fill, Font(bold=True)
+                for col in ws_bonus.columns: ws_bonus.column_dimensions[col[0].column_letter].width = 15
+                ws_bonus.column_dimensions['J'].width = 50
+                ws_s = writer.sheets['統計總表']
+                for r_idx, row in enumerate(ws_s.iter_rows(min_row=1, max_row=ws_s.max_row), 1):
+                    for cell in row:
+                        cell.border, cell.alignment = border, center
+                        if r_idx == 1: cell.fill, cell.font = header_fill, Font(bold=True)
+                        if "合計" in str(ws_s.cell(row=r_idx, column=1).value): cell.font = red_font
+                for col in ws_s.columns: ws_s.column_dimensions[col[0].column_letter].width = 16
+            return output.getvalue()
+
+        st.title("教練薪資結算系統")
+        COACH_NAMES = ["林意潔", "陳秀蓉", "陳怡廷", "鍾佳蓁 Rita", "黃宛婷", "楊子慧(小在)", "許力尹 LOUIS", "顥顥", "洪睿絃", "紀儒蓁", "李翎瑋", "郭奕伶", "郭品均", "邴妍語", "張鈞弼", "蕭竣升", "紀萃文", "李函豫", "尤子綺", "張楷翌", "侯懿庭", "謝俐池", "黃姿菁", "籃郁雯", "徐漫", "鄭筠馨", "高舒涵", "邱靜瑜"]
+        st.subheader("1. 上傳資料")
+        uploaded_files = st.file_uploader("上傳預約統計表 (.xlsx)", type=["xlsx"], accept_multiple_files=True, key="coach_salary_uploader")
+        st.subheader("2. 輸入特別獎金 (選填)")
+        st.info("可在下方表格直接輸入各教練的特別獎金與備註（如說明會、觀課等)")
+        if 'special_bonus_data' not in st.session_state:
+            st.session_state.special_bonus_data = pd.DataFrame({"教練姓名": COACH_NAMES, "三館特別獎金(加項)": [0] * len(COACH_NAMES), "巨蛋特別獎金(加項)": [0] * len(COACH_NAMES), "備註": [""] * len(COACH_NAMES)})
+        edited_df = st.data_editor(st.session_state.special_bonus_data, column_config={"教練姓名": st.column_config.TextColumn("教練姓名", disabled=True), "三館特別獎金(加項)": st.column_config.NumberColumn("三館特別獎金(加項)", format="%d"), "巨蛋特別獎金(加項)": st.column_config.NumberColumn("巨蛋特別獎金(加項)", format="%d"), "備註": st.column_config.TextColumn("備註")}, hide_index=True, use_container_width=True, key="coach_salary_editor")
+        st.subheader("3. 產生報表")
+        if uploaded_files:
+            if st.button("開始計算薪資並排版", key="start_calc_btn"):
+                try:
+                    final_excel_data = generate_perfect_salary_report(uploaded_files, edited_df)
+                    st.download_button(label="下載薪資明細表", data=final_excel_data, file_name="教練薪資明細.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_salary_btn")
+                except Exception as e:
+                    st.error(f"計算過程中發生錯誤: {e}")
+        else:
+            st.warning("請先上傳預約統計表檔案。")
