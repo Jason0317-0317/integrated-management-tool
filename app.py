@@ -139,7 +139,7 @@ elif st.session_state.feature is None:
                     st.rerun()
             
             with col_f2:
-                if st.button("團個績計算工具", key="sales_report", use_container_width=True):
+                if st.button("團績個績統計", key="sales_report", use_container_width=True):
                     st.session_state.feature = "sales_report"
                     st.rerun()
             
@@ -153,7 +153,7 @@ elif st.session_state.feature is None:
             st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            if st.button("業務獎金計算", key="editor_bonus", use_container_width=True):
+            if st.button("小編獎金統計", key="editor_bonus", use_container_width=True):
                 st.session_state.feature = "editor_bonus"
                 st.rerun()
         elif st.session_state.role == "designer":
@@ -168,7 +168,7 @@ elif st.session_state.feature is None:
             st.markdown("<p style='text-align: center; color: #999;'>請選擇您要使用的功能</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            if st.button("教練薪資結算", key="coach_salary_btn", use_container_width=True):
+            if st.button("教練薪資統計", key="coach_salary_btn", use_container_width=True):
                 st.session_state.feature = "coach_salary"
                 st.rerun()
 
@@ -246,7 +246,7 @@ else:
         
         # --- 檔案上傳區塊 ---
         st.markdown("### 2. 上傳報表檔案")
-        uploaded_file = st.file_uploader("選擇原始檔案 (Excel 或 CSV)", type=["xlsx", "csv"], key="lesson_uploader")
+        uploaded_file = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx", "csv"], key="lesson_uploader")
         
         if uploaded_file is not None:
             try:
@@ -477,7 +477,7 @@ else:
         st.title("出勤明細統計")
         st.markdown("上傳進出場記錄。")
         
-        uploaded_file = st.file_uploader("選擇原始 Excel 進出場記錄檔案", type=["xlsx"], key="attendance_uploader")
+        uploaded_file = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], key="attendance_uploader")
         
         if uploaded_file is not None:
             try:
@@ -506,10 +506,7 @@ else:
                 
                 summary['總工時(時:分)'] = summary['總時數_分'].apply(minutes_to_hhmm)
                 
-                st.markdown("### 出勤統計預覽")
-                st.dataframe(summary[['姓名', '出勤天數', '總時數_分', '總工時(時:分)']], use_container_width=True)
-                
-                # 報表生成邏輯 (整合 abcde 專案邏輯)
+                # 報表生成邏輯
                 if st.button("產生完整報表並下載"):
                     output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -540,7 +537,7 @@ else:
 
     # ===== 業務獎金計算系統 =====
     elif st.session_state.feature == "editor_bonus":
-        st.title("業務獎金計算系統")
+        st.title("小編獎金統計")
         
         def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier):
             # 1. 體驗成交獎金
@@ -987,7 +984,7 @@ else:
                 for col in ws_s.columns: ws_s.column_dimensions[col[0].column_letter].width = 16
             return output.getvalue()
 
-        st.title("教練薪資結算系統")
+        st.title("教練薪資統計")
         COACH_NAMES = ["林意潔", "陳秀蓉", "陳怡廷", "鍾佳蓁 Rita", "黃宛婷", "楊子慧(小在)", "許力尹 LOUIS", "顥顥", "洪睿絃", "紀儒蓁", "李翎瑋", "郭奕伶", "郭品均", "邴妍語", "張鈞弼", "蕭竣升", "紀萃文", "李函豫", "尤子綺", "張楷翌", "侯懿庭", "謝俐池", "黃姿菁", "籃郁雯", "徐漫", "鄭筠馨", "高舒涵", "邱靜瑜"]
         st.subheader("1. 上傳資料")
         uploaded_files = st.file_uploader("上傳預約統計表 (.xlsx)", type=["xlsx"], accept_multiple_files=True, key="coach_salary_uploader")
