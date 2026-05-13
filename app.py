@@ -987,7 +987,7 @@ else:
         st.title("教練薪資統計")
         COACH_NAMES = ["林意潔", "陳秀蓉", "陳怡廷", "鍾佳蓁 Rita", "黃宛婷", "楊子慧(小在)", "許力尹 LOUIS", "顥顥", "洪睿絃", "紀儒蓁", "李翎瑋", "郭奕伶", "郭品均", "邴妍語", "張鈞弼", "蕭竣升", "紀萃文", "李函豫", "尤子綺", "張楷翌", "侯懿庭", "謝俐池", "黃姿菁", "籃郁雯", "徐漫", "鄭筠馨", "高舒涵", "邱靜瑜"]
         st.subheader("1. 上傳資料")
-        uploaded_files = st.file_uploader("上傳預約統計表 (.xlsx)", type=["xlsx"], accept_multiple_files=True, key="coach_salary_uploader")
+        uploaded_files = st.file_uploader("選擇原始 Excel 檔案", type=["xlsx"], accept_multiple_files=True, key="coach_salary_uploader")
         st.subheader("2. 輸入特別獎金 (選填)")
         st.info("可在下方表格直接輸入各教練的特別獎金與備註（如說明會、觀課等)")
         if 'special_bonus_data' not in st.session_state:
