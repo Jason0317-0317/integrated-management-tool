@@ -640,8 +640,20 @@ else:
         with col1: gym = st.selectbox("館別", ["義昌館", "高美館", "中山館", "巨蛋館"], key="gym_select")
         with col2: name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
         with col3:
-            date_range = st.date_input("報表日期", value=None, key="date_input")
-            date_str = str(date_range) if date_range else ""
+            today = datetime.today()
+            first_day = today.replace(day=1)
+
+            date_range = st.date_input(
+            "報表日期區間",
+            value=(first_day, today),
+            key="date_range_input"
+        )
+
+        if len(date_range) == 2:
+            start_date, end_date = date_range
+            date_str = f"{start_date} ~ {end_date}"
+        else:
+            date_str = ""
         with col4: is_ft = st.selectbox("員工身份", ["正職", "兼職"], key="employment_select") == "正職"
         
         st.divider()
