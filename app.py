@@ -631,7 +631,7 @@ else:
                 s_bonus = 0
             
             # 6. 月高手獎勵
-            total_v = (sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count)
+            total_v = (sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count + si_to_st)
             if total_v >= 50: m_bonus = 5000
             elif total_v >= 30: m_bonus = 2000
             else: m_bonus = 0
@@ -671,6 +671,7 @@ else:
                     ["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""],
                     ["體驗成交", sum(deal_dict.values()), d_bonus, ""],
                     ["補位獎金", classes, classes * 30, ""],
+                    ["SI 轉 ST", si_to_st, s_bonus, "超過20筆起計"],
                     ["回流獎金", sum(loyalty_dict.values()), l_bonus, ""],
                     ["結構升級獎金", sum(upgrade_counts.values()), u_bonus, ""],
                     ["品牌知名度獎金", b_count, b_bonus, b_note],
@@ -725,7 +726,7 @@ else:
         with col_b:
             brand_input = st.number_input("品牌推廣人數", min_value=0, value=0, key="brand_input")
             extra_cls = st.number_input("補開課程次數", min_value=0, value=0, key="extra_cls")
-        
+            si_to_st_input = st.number_input("SI 轉 ST 筆數", min_value=0, value=0, key="si_to_st")
         st.markdown("### 2. 回流與升級項目")
         col_c, col_d = st.columns(2)
         with col_c:
@@ -756,7 +757,8 @@ else:
                 excel_file = generate_matrix_excel(
                     meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
                     res[4], res[3], res[5], res[2], res[6], res[7], 
-                    "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier
+                    "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier,
+                    si_to_st_input, res[9]
                 )
                 st.download_button(
                     label="點我儲存 Excel 檔案",
