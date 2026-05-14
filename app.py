@@ -613,10 +613,10 @@ else:
             # 5. 品牌知名度獎金
             base_val = 5 if is_ft else 2
             if brand_count == 0:
-                b_bonus = -200
+                b_bonus = 0
                 b_note = "推廣人數為 0"
             elif brand_count < base_val:
-                b_bonus = -100
+                b_bonus = 0
                 b_note = f"未達門檻 ({base_val}位)"
             elif brand_count == base_val:
                 b_bonus = 0
@@ -725,7 +725,7 @@ else:
             deal_dict = {"當天": d_today, "48小時": d_48h, "7天內": d_7d, "超過7天": d_over7}
         with col_b:
             brand_input = st.number_input("品牌推廣人數", min_value=0, value=0, key="brand_input")
-            extra_cls = st.number_input("補開課程次數", min_value=0, value=0, key="extra_cls")
+            extra_cls = st.number_input("補開課程人數", min_value=0, value=0, key="extra_cls")
             si_to_st_input = st.number_input("SI 轉 ST 筆數", min_value=0, value=0, key="si_to_st")
         st.markdown("### 2. 回流與升級項目")
         col_c, col_d = st.columns(2)
