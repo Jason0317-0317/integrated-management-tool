@@ -566,8 +566,9 @@ else:
                         # Sheet 1: 出勤明細
                         df_sorted = df.sort_values(['姓名', '進場日期', '進場時間']).reset_index(drop=True)
                         df_sorted['總工時(時:分)'] = df_sorted['總時間(分)'].apply(minutes_to_hhmm)
-                        df_sorted.to_excel(writer, sheet_name='出勤明細', index=False)
+                        drop_cols = []
                         df_sorted = df_sorted.drop(columns=drop_cols, errors='ignore')
+                        df_sorted.to_excel(writer, sheet_name='出勤明細', index=False)
                         
                         # Sheet 2: 月份出勤統計
                         summary.to_excel(writer, sheet_name='月份出勤統計', index=False)
