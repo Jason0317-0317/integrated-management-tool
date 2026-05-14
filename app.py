@@ -613,10 +613,10 @@ else:
             # 5. 品牌知名度獎金
             base_val = 5 if is_ft else 2
             if brand_count == 0:
-                b_bonus = 0
+                b_bonus = -200
                 b_note = "推廣人數為 0"
             elif brand_count < base_val:
-                b_bonus = 0
+                b_bonus = -100
                 b_note = f"未達門檻 ({base_val}位)"
             elif brand_count == base_val:
                 b_bonus = 0
