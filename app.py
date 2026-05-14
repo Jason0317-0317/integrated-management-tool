@@ -78,7 +78,6 @@ if st.session_state.role is None:
         # --- 店長密碼驗證區塊 ---
         if st.session_state.get("show_manager_login", False):
             st.markdown("<br>", unsafe_allow_html=True)
-            #st.info("請輸入店長管理密碼")
             is_locked_mgr = False
             
             if st.session_state.retry_count_mgr >= 3:
