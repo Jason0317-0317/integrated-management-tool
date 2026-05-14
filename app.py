@@ -78,7 +78,7 @@ if st.session_state.role is None:
         # --- 店長密碼驗證區塊 ---
         if st.session_state.get("show_manager_login", False):
             st.markdown("<br>", unsafe_allow_html=True)
-            st.info("請輸入店長管理密碼")
+            #st.info("請輸入店長管理密碼")
             is_locked_mgr = False
             
             if st.session_state.retry_count_mgr >= 3:
@@ -144,7 +144,7 @@ if st.session_state.role is None:
                 col_confirm, col_cancel = st.columns(2)
                 with col_confirm:
                     if st.button("確認", key="finance_confirm_btn", use_container_width=True):
-                        if password == "20260512":
+                        if password == "20260512": # 在此設定財務密碼
                             st.session_state.role = "finance"
                             st.session_state.show_finance_login = False
                             st.session_state.retry_count = 0  # 成功後重置
