@@ -525,7 +525,7 @@ else:
             except Exception as e:
                 st.error(f"處理過程中發生錯誤: {e}")
 
-    # ===== 出勤明細統計 (新功能) =====
+    # ===== 出勤明細統計 =====
     elif st.session_state.feature == "attendance_report":
         st.title("出勤明細統計")
         st.markdown("上傳進出場記錄。")
@@ -566,6 +566,7 @@ else:
                         # Sheet 1: 出勤明細
                         df_sorted = df.sort_values(['姓名', '進場日期', '進場時間']).reset_index(drop=True)
                         df_sorted['總工時(時:分)'] = df_sorted['總時間(分)'].apply(minutes_to_hhmm)
+                        df_sorted = df_sorted.drop(columns=drop_cols, errors='ignore')
                         df_sorted.to_excel(writer, sheet_name='出勤明細', index=False)
                         
                         # Sheet 2: 月份出勤統計
