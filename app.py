@@ -593,7 +593,7 @@ else:
     elif st.session_state.feature == "editor_bonus":
         st.title("小編獎金統計")
         
-        def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier):
+        def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier, si_to_st):
             # 1. 體驗成交獎金
             d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + 
                       deal_dict["7天內"] * 50 + deal_dict["超過7天"] * 0)
@@ -743,7 +743,7 @@ else:
             u_class = st.number_input("包班成立(次)", min_value=0, value=0, key="upgrade_class")
             upgrade_dict = {"1對2變1對3": u_12_13, "團課變期班": u_group, "包班成立": u_class}
         
-        res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, is_ft, brand_input, revenue_tier)
+        res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, is_ft, brand_input, revenue_tier, si_to_st_input)
         st.divider()
         main_col1, main_col2 = st.columns(2)
         with main_col1: st.metric("當月預計總獎金", f"{res[0]} 元")
