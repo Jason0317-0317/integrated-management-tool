@@ -573,7 +573,7 @@ else:
                 b_note = f"加發 {extra_units} 組獎金"
             
             # 6. 月高手獎勵
-            total_v = sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values())
+            total_v = sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + sum(base_val.values())
             if total_v >= 50: m_bonus = 5000
             elif total_v >= 30: m_bonus = 2000
             else: m_bonus = 0
