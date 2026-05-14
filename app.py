@@ -26,6 +26,16 @@ if "feature" not in st.session_state:
     st.session_state.feature = None
 if "show_finance_login" not in st.session_state:
     st.session_state.show_finance_login = False
+if "show_manager_login" not in st.session_state:
+    st.session_state.show_manager_login = False
+if "retry_count" not in st.session_state:
+    st.session_state.retry_count = 0
+if "lockout_time" not in st.session_state:
+    st.session_state.lockout_time = None
+if "retry_count_mgr" not in st.session_state:
+    st.session_state.retry_count_mgr = 0
+if "lockout_time_mgr" not in st.session_state:
+    st.session_state.lockout_time_mgr = None
 
 # ========================
 # 步驟 1: 身份選擇
@@ -43,8 +53,8 @@ if st.session_state.role is None:
         
         with col_btn1:
             if st.button("店長登入", key="manager_btn", use_container_width=True):
-                st.session_state.role = "manager"
-                st.rerun()
+                st.session_state.show_manager_login = True
+                st.session_state.show_finance_login = False
         
         with col_btn2:
             if st.button("小編登入", key="editor_btn", use_container_width=True):
@@ -59,11 +69,54 @@ if st.session_state.role is None:
         with col_btn4:
             if st.button("財務登入", key="finance_btn", use_container_width=True):
                 st.session_state.show_finance_login = True
+                st.session_state.show_manager_login = False
         
         if "retry_count" not in st.session_state:
             st.session_state.retry_count = 0
         if "lockout_time" not in st.session_state:
             st.session_state.lockout_time = None
+        # --- 店長密碼驗證區塊 ---
+        if st.session_state.get("show_manager_login", False):
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("請輸入店長管理密碼")
+            is_locked_mgr = False
+            
+            if st.session_state.retry_count_mgr >= 3:
+                time_diff = datetime.now() - st.session_state.lockout_time_mgr
+                if time_diff < timedelta(minutes=5):
+                    remaining_time = 5 - int(time_diff.total_seconds() // 60)
+                    st.error(f"密碼錯誤過多，請休息 {remaining_time} 分鐘再嘗試。")
+                    is_locked_mgr = True
+                    if st.button("返回", key="mgr_lock_back", use_container_width=True):
+                        st.session_state.show_manager_login = False
+                        st.rerun()
+                else:
+                    st.session_state.retry_count_mgr = 0
+                    st.session_state.lockout_time_mgr = None
+
+            if not is_locked_mgr:
+                mgr_password = st.text_input(
+                    f"請輸入店長密碼 (剩餘次數: {3 - st.session_state.retry_count_mgr})",
+                    type="password", key="mgr_pwd_input"
+                )
+                col_m1, col_m2 = st.columns(2)
+                with col_m1:
+                    if st.button("確認", key="mgr_confirm_btn", use_container_width=True):
+                        if mgr_password == "0168":  # 在此設定店長密碼
+                            st.session_state.role = "manager"
+                            st.session_state.show_manager_login = False
+                            st.session_state.retry_count_mgr = 0
+                            st.success("店長登入成功！")
+                            st.rerun()
+                        else:
+                            st.session_state.retry_count_mgr += 1
+                            if st.session_state.retry_count_mgr >= 3:
+                                st.session_state.lockout_time_mgr = datetime.now()
+                            st.rerun()
+                with col_m2:
+                    if st.button("取消", key="mgr_cancel_btn", use_container_width=True):
+                        st.session_state.show_manager_login = False
+                        st.rerun()
         # 財務密碼驗證區塊
         if st.session_state.get("show_finance_login", False):
             st.markdown("<br>", unsafe_allow_html=True)
