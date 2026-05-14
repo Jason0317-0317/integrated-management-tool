@@ -589,7 +589,7 @@ else:
             except Exception as e:
                 st.error(f"處理過程中發生錯誤: {e}")
 
-    # ===== 業務獎金計算系統 =====
+    # ===== 小編獎金統計 =====
     elif st.session_state.feature == "editor_bonus":
         st.title("小編獎金統計")
         
@@ -625,6 +625,10 @@ else:
                 extra_units = (brand_count - base_val) // 5
                 b_bonus = extra_units * 200
                 b_note = f"加發 {extra_units} 組獎金"
+            if si_to_st >= 25:
+                s_bonus = ((si_to_st - 20) // 5) * 200
+            else:
+                s_bonus = 0
             
             # 6. 月高手獎勵
             total_v = (sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count)
@@ -636,8 +640,8 @@ else:
             rev_map = {"不列入計算": 0, "12萬元": 2000, "24萬元": 4000, "30萬元": 6000}
             r_bonus = rev_map.get(revenue_tier, 0)
             
-            total = d_bonus + c_bonus + l_bonus + u_bonus + b_bonus + m_bonus + r_bonus
-            return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, b_note, r_bonus
+            total = d_bonus + c_bonus + l_bonus + u_bonus + b_bonus + m_bonus + r_bonus s_bonus
+            return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, b_note, r_bonus, s_bonus
 
         def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier):
             output = io.BytesIO()
