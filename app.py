@@ -647,46 +647,71 @@ else:
             return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, b_note, r_bonus, s_bonus
             
         # 2. Excel 報表產出函數 
+        # 1. 獎金計算核心函數
+        def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier, si_to_st):
+            # 體驗成交獎金：超過7天乘以0元
+            d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + deal_dict.get("超過7天", 0) * 0)
+            
+            # 2. 補位獎金：每 5 人為 1 筆筆數
+            class_units = classes // 5
+            c_bonus = class_units * 30
+            
+            # 回流與升級項目
+            l_bonus = (loyalty_dict["10堂"] * 100 + loyalty_dict["20堂"] * 200 + 
+                      loyalty_dict["30堂"] * 300 + loyalty_dict["40堂"] * 500)
+            
+            # 結構升級獎金
+            u_bonus = (upgrade_counts["1對2變1對3"] * 100 + 
+                      upgrade_counts["團課變期班"] * 150 + 
+                      upgrade_counts["包班成立"] * 300)
+            
+            # 品牌知名度與 SI 轉 ST 獎金
+            base_val = 3
+            if brand_count == 0: b_bonus = -200
+            elif brand_count < base_val: b_bonus = -100
+            elif brand_count == base_val: b_bonus = 0
+            else: b_bonus = ((brand_count - base_val) // 5) * 200
+            
+            s_bonus = (((si_to_st - 20) // 5) * 200) if si_to_st >= 25 else 0
+            
+            # 6. 月高手獎勵：總轉換筆數 (包含 超過7天 的筆數)
+            total_v = (sum(deal_dict.values()) + class_units + sum(loyalty_dict.values()) + 
+                       sum(upgrade_counts.values()) + brand_count + si_to_st)
+            
+            if total_v >= 50: m_bonus = 5000
+            elif total_v >= 30: m_bonus = 2000
+            else: m_bonus = 0
+            
+            rev_map = {"不列入計算": 0, "12萬元": 2000, "24萬元": 4000, "30萬元": 6000}
+            r_bonus = rev_map.get(revenue_tier, 0)
+            
+            total = d_bonus + c_bonus + l_bonus + u_bonus + b_bonus + m_bonus + r_bonus + s_bonus
+            return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, "", r_bonus, s_bonus
+
+        # 2. Excel 報表產出函數
         def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier, si_to_st, s_bonus):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 workbook = writer.book
                 worksheet = workbook.create_sheet('獎金結算', 0)
-                
-                # 樣式設定
                 bold_font = Font(bold=True, name='微軟正黑體')
                 center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
                 thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                 
-                # 1. 寫入基本資訊
                 info = [["館別", meta_data["館別"]], ["報表日期", meta_data["報表日期"]], ["小編姓名", meta_data["小編姓名"]]]
                 for i, (k, v) in enumerate(info, 1):
                     worksheet.cell(row=i, column=1, value=k).font = bold_font
                     worksheet.cell(row=i, column=2, value=v)
                 
-                # 2. 定義表格橫向結構 (全部展開)
-                class_units = classes // 5  # 補位組數
+                class_units = classes // 5
                 
-                # 建立動態表頭與內容
-                headers = ["項目", "個人業績級別獎金", "體驗(當天成交)", "體驗(48h)", "體驗(7d)", "補位人數"]
-                counts = ["內容/筆數", r_tier if r_tier else "不列入計算", deal_dict["當天"], deal_dict["48小時"], deal_dict["超過7天"], class_units]
-                amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict["7天內"]*50, 0, class_units*30]
+                # 建立橫向表頭 (包含 當天, 48h, 超過7天)
+                headers = ["項目", "個人業績級別獎金", "體驗(當天)", "體驗(48h)", "體驗(>7d)", "補位(組)", "SI轉ST", "回流人數"]
+                counts = ["內容/筆數", r_tier, deal_dict["當天"], deal_dict["48小時"], deal_dict.get("超過7天", 0), class_units, si_to_st, sum(loyalty_dict.values())]
+                amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, 0, class_units*30, s_bonus, l_bonus]
                 
-                # 加入 SI轉ST
-                headers.append("SI轉ST")
-                counts.append(si_to_st)
-                amounts.append(s_bonus)
-                
-                # 加入 回流人數
-                headers.append("回流人數")
-                counts.append(sum(loyalty_dict.values()))
-                amounts.append(l_bonus)
-                
-                upgrade_items = [
-                    ("升級(1:2變1:3)", "1對2變1對3", 100),
-                    ("升級(團課變期)", "團課變期班", 150),
-                    ("升級(包班成立)", "包班成立", 300)
-                ]
+                # 結構升級明細
+                upgrade_items = [("升級(1:2變1:3)", "1對2變1對3", 100), ("升級(團課變期)", "團課變期班", 150), ("升級(包班成立)", "包班成立", 300)]
                 for label, key, price in upgrade_items:
                     headers.append(label)
                     count = upgrade_counts.get(key, 0)
@@ -697,27 +722,20 @@ else:
                 counts += [b_count, f"轉換:{total_v}", ""]
                 amounts += [b_bonus, m_bonus, result]
                 
-                # 3. 寫入 Excel
-                start_row = 5
                 for col, text in enumerate(headers, 1):
-                    cell = worksheet.cell(row=start_row, column=col, value=text)
+                    cell = worksheet.cell(row=5, column=col, value=text)
                     cell.font, cell.alignment, cell.border = bold_font, center_align, thin_border
-                
                 for col, val in enumerate(counts, 1):
-                    cell = worksheet.cell(row=start_row + 1, column=col, value=val)
+                    cell = worksheet.cell(row=6, column=col, value=val)
                     cell.alignment, cell.border = center_align, thin_border
                     if col == 1: cell.font = bold_font
-                
                 for col, val in enumerate(amounts, 1):
-                    cell = worksheet.cell(row=start_row + 2, column=col, value=val)
+                    cell = worksheet.cell(row=7, column=col, value=val)
                     cell.alignment, cell.border = center_align, thin_border
-                    if col == 1: cell.font = bold_font
-                    if col == len(amounts): cell.font = bold_font
+                    if col == 1 or col == len(amounts): cell.font = bold_font
 
-                # 4. 自動調整欄寬
                 for col_idx in range(1, len(headers) + 1):
-                    worksheet.column_dimensions[get_column_letter(col_idx)].width = 15
-                
+                    worksheet.column_dimensions[get_column_letter(col_idx)].width = 16
             return output.getvalue()
 
         # 3. Streamlit 介面渲染
