@@ -633,7 +633,7 @@ else:
             s_bonus = (((si_to_st - 20) // 5) * 200) if si_to_st >= 25 else 0
             
             # 6. 月高手獎勵：總轉換筆數
-            total_v = (sum(deal_dict.values()) + class_units + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count + si_to_st)
+            total_v = (sum(deal_dict.values()) + class_units + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count)
             
             if total_v >= 50: m_bonus = 5000
             elif total_v >= 30: m_bonus = 2000
