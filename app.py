@@ -703,7 +703,7 @@ else:
             return output.getvalue()
         
         st.markdown("### 基本資訊設定")
-        col1, col2, col3, col4 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
         with col1: gym = st.selectbox("館別", ["義昌館", "高美館", "中山館", "巨蛋館"], key="gym_select")
         with col2: name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
         with col3:
