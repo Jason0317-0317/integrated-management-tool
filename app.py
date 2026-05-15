@@ -590,7 +590,7 @@ else:
                 st.error(f"處理過程中發生錯誤: {e}")
 
 # ===== 小編獎金統計 =====
-elif st.session_state.feature == "editor_bonus":
+if st.session_state.feature == "editor_bonus":
     st.title("小編獎金統計")
     
     # 1. 獎金計算核心函數
