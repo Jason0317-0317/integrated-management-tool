@@ -611,7 +611,7 @@ else:
                       upgrade_counts["包班成立"] * 300)
             
             # 5. 品牌知名度獎金
-            base_val = 5 if is_ft else 2
+            base_val = 3
             if brand_count == 0:
                 b_bonus = -200
                 b_note = "推廣人數為 0"
@@ -656,7 +656,6 @@ else:
                     ["館別", meta_data["館別"]],
                     ["報表日期", meta_data["報表日期"]],
                     ["小編姓名", meta_data["小編姓名"]],
-                    ["員工身份", emp_type]
                 ]
                 for i, (k, v) in enumerate(info, 1):
                     worksheet.cell(row=i, column=1, value=k).font = bold_font
@@ -710,7 +709,7 @@ else:
             date_str = f"{start_date} ~ {end_date}"
         else:
             date_str = ""
-        with col4: is_ft = st.selectbox("員工身份", ["正職", "兼職"], key="employment_select") == "正職"
+        is_ft = True
         
         st.divider()
         st.markdown("### 1. 體驗與品牌推廣")
@@ -743,7 +742,7 @@ else:
             u_class = st.number_input("包班成立(次)", min_value=0, value=0, key="upgrade_class")
             upgrade_dict = {"1對2變1對3": u_12_13, "團課變期班": u_group, "包班成立": u_class}
         
-        res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, is_ft, brand_input, revenue_tier, si_to_st_input)
+        res = calculate_bonus(deal_dict, extra_cls, loyalty_dict, upgrade_dict, True, brand_input, revenue_tier, si_to_st_input)
         st.divider()
         main_col1, main_col2 = st.columns(2)
         with main_col1: st.metric("當月預計總獎金", f"{res[0]} 元")
@@ -756,8 +755,8 @@ else:
                 meta = {"館別": gym, "小編姓名": name, "報表日期": date_str}
                 excel_file = generate_matrix_excel(
                     meta, res[1], res[0], deal_dict, extra_cls, loyalty_dict, upgrade_dict,
-                    res[4], res[3], res[5], res[2], res[6], res[7], 
-                    "正職" if is_ft else "兼職", brand_input, res[8], revenue_tier,
+                    res[4], res[3], res[5], res[2], res[6], res[7], "小編"
+                    , brand_input, res[8], revenue_tier,
                     si_to_st_input, res[9]
                 )
                 st.download_button(
