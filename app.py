@@ -658,7 +658,7 @@ else:
                 center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
                 thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                 
-                # 1. 寫入基本資訊 (左上角)
+                # 1. 寫入基本資訊
                 info = [
                     ["館別", meta_data["館別"]],
                     ["報表日期", meta_data["報表日期"]],
@@ -668,16 +668,15 @@ else:
                     worksheet.cell(row=i, column=1, value=k).font = bold_font
                     worksheet.cell(row=i, column=2, value=v)
                 
-                # 2. 定義表格結構
-                # 標題行
+                # 2. 定義表格內容
+                # 標題行 (Row 5)
                 headers = ["項目", "個人業績級別", "業績獎金", "體驗成交(當天)", "體驗成交(48小時)", "體驗成交(7天內)", "體驗成交(超過7天)", "補位筆數", "SI轉ST", "回流人數", "結構升級", "品牌推廣", "月高手獎勵", "總計"]
                 
-                # 筆數/內容行 (對應圖片的第 6 列)
-                deal_prices = {"當天": 80, "48小時": 60, "7天內": 50, "超過7天": 0}
+                # 筆數列 (Row 6) - 依照圖片修正對應位置
                 counts = [
                     "筆數", 
-                    r_tier, # 個人業績級別
-                    "-",    # 業績獎金下方筆數(無)
+                    r_tier if r_tier else "不列入計算", # 個人業績級別顯示在筆數這一行
+                    "-",                               # 業績獎金下方顯示 -
                     deal_dict["當天"], 
                     deal_dict["48小時"], 
                     deal_dict["7天內"], 
@@ -687,15 +686,15 @@ else:
                     sum(loyalty_dict.values()), 
                     sum(upgrade_counts.values()), 
                     b_count, 
-                    f"轉換:{total_v}", # 月高手獎勵顯示總轉換數
-                    "" # 總計下方筆數
+                    f"轉換:{total_v}", 
+                    "" 
                 ]
                 
-                # 金額行 (對應圖片的第 7 列)
+                # 金額列 (Row 7) - 依照圖片修正對應位置
                 amounts = [
                     "金額",
-                    "-",      # 級別下方金額(無)
-                    r_bonus,  # 業績獎金
+                    "-",      # 個人業績級別下方顯示 -
+                    r_bonus,  # 業績獎金顯示在金額這一行
                     deal_dict["當天"] * 80,
                     deal_dict["48小時"] * 60,
                     deal_dict["7天內"] * 50,
@@ -706,27 +705,27 @@ else:
                     u_bonus,
                     b_bonus,
                     m_bonus,
-                    result # 總計
+                    result
                 ]
                 
-                # 3. 開始寫入儲存格 (從第 5 列開始)
+                # 3. 執行寫入
                 start_row = 5
                 
-                # 寫入標題 (Header)
+                # 標題
                 for col, text in enumerate(headers, 1):
                     cell = worksheet.cell(row=start_row, column=col, value=text)
                     cell.font = bold_font
                     cell.alignment = center_align
                     cell.border = thin_border
                 
-                # 寫入筆數列
+                # 筆數列
                 for col, val in enumerate(counts, 1):
                     cell = worksheet.cell(row=start_row + 1, column=col, value=val)
                     cell.alignment = center_align
                     cell.border = thin_border
                     if col == 1: cell.font = bold_font
                 
-                # 寫入金額列
+                # 金額列
                 for col, val in enumerate(amounts, 1):
                     cell = worksheet.cell(row=start_row + 2, column=col, value=val)
                     cell.alignment = center_align
@@ -739,7 +738,8 @@ else:
                 # 4. 自動調整欄寬
                 for col_idx in range(1, len(headers) + 1):
                     col_letter = get_column_letter(col_idx)
-                    worksheet.column_dimensions[col_letter].width = 16
+                    # 讓欄位稍微寬一點，避免文字擠在一起
+                    worksheet.column_dimensions[col_letter].width = 18
                 
             return output.getvalue()
 
