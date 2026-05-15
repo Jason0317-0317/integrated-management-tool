@@ -599,8 +599,8 @@ else:
             d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + 
                       deal_dict["7天內"] * 50 + deal_dict["超過7天"] * 0)
             
-            # 補位獎金
-            c_bonus = classes * 30
+            # 2. 補位獎金：每滿 5 人發 30 元
+            c_bonus = (classes // 5) * 30
             
             # 回流獎金
             l_bonus = (loyalty_dict["10堂"] * 100 + loyalty_dict["20堂"] * 200 + 
@@ -644,9 +644,8 @@ else:
             
             total = d_bonus + c_bonus + l_bonus + u_bonus + b_bonus + m_bonus + r_bonus + s_bonus
             return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, b_note, r_bonus, s_bonus
-
-        # 2. Excel 報表產出函數
-        # 2. Excel 報表產出函數 (橫向矩陣版)
+            
+        # 2. Excel 報表產出函數 
         def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier, si_to_st, s_bonus):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -711,7 +710,7 @@ else:
                     deal_dict["48小時"] * 60,
                     deal_dict["7天內"] * 50,
                     deal_dict["超過7天"] * 0,
-                    classes * 30,
+                    (classes // 5) * 30,
                     s_bonus,
                     l_bonus,
                     u_bonus,
