@@ -822,7 +822,7 @@ else:
                     data=excel_file,
                     file_name=f"{name}_獎金結算_{date_str}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )幫我理解這些程式碼，然後我再跟你說提示慈
+                )
     # ===== 教練薪資結算系統 =====
     elif st.session_state.feature == "coach_salary":
         def generate_perfect_salary_report(uploaded_files, special_bonus_df):
