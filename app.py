@@ -593,16 +593,6 @@ else:
 elif st.session_state.feature == "editor_bonus":
     st.title("小編獎金統計")
     
-    # 【安全防護】確保 openpyxl 必要元件存在，避免產生 Excel 時噴 NameError
-    import io
-    from datetime import datetime
-    import pandas as pd
-    try:
-        from openpyxl.utils import get_column_letter
-        from openpyxl.styles import Font, Alignment, Border, Side
-    except ImportError:
-        st.error("請確保已安裝並可導入 openpyxl 模組")
-    
     # 1. 獎金計算核心函數
     def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier, si_to_st):
         # 體驗成交獎金：包含 7天內 50元
