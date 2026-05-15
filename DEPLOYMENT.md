@@ -160,6 +160,7 @@ docker run -p 8501:8501 -e FINANCE_PASSWORD=your-strong-password chunbulao-app:l
 | 變數名稱 | 說明 | 必填 |
 |---------|------|------|
 | `FINANCE_PASSWORD` | 財務角色登入密碼 | **是** |
+| `MANAGER_PASSWORD` | 店長角色登入密碼 | 否 (預設 0168) |
 
 > **安全提醒**：不要將 `.env` 提交到 Git，請確認 `.gitignore` 中已包含 `.env`。
 
