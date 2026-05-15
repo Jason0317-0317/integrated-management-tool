@@ -663,9 +663,9 @@ else:
                 class_units = classes // 5
                 
                 # 建立橫向表頭
-                headers = ["項目", "個人業績級別獎金", "體驗(當天)", "體驗(48h)", "體驗(7天內)", "體驗(>7d)", "補位(組)", "SI轉ST", "回流(10堂)", "回流(20堂)", "回流(30堂)", "回流(40堂)"]
-                counts = ["內容/筆數", r_tier, deal_dict["當天"], deal_dict["48小時"], deal_dict.get("7天內", 0), deal_dict.get("超過7天", 0), class_units, si_to_st, loyalty_dict["10堂"], loyalty_dict["20堂"], loyalty_dict["30堂"], loyalty_dict["40堂"]]
-                amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict.get("7天內", 0)*50, 0, class_units*30, s_bonus, loyalty_dict["10堂"]*100, loyalty_dict["20堂"]*200, loyalty_dict["30堂"]*300, loyalty_dict["40堂"]*500]
+                headers = ["項目", "個人業績級別獎金","品牌推廣", "體驗(當天)", "體驗(48h)", "體驗(7天內)", "體驗(>7d)", "補位(組)", "SI轉ST", "回流(10堂)", "回流(20堂)", "回流(30堂)", "回流(40堂)"]
+                counts = ["內容/筆數", r_tier,b_count, deal_dict["當天"], deal_dict["48小時"], deal_dict.get("7天內", 0), deal_dict.get("超過7天", 0), class_units, si_to_st, loyalty_dict["10堂"], loyalty_dict["20堂"], loyalty_dict["30堂"], loyalty_dict["40堂"]]
+                amounts = ["金額", r_bonus,b_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict.get("7天內", 0)*50, 0, class_units*30, s_bonus, loyalty_dict["10堂"]*100, loyalty_dict["20堂"]*200, loyalty_dict["30堂"]*300, loyalty_dict["40堂"]*500]
                 
                 # 結構升級明細
                 upgrade_items = [("升級(1:2變1:3)", "1對2變1對3", 100), ("升級(團課變期)", "團課變期班", 150), ("升級(包班成立)", "包班成立", 300)]
@@ -675,9 +675,9 @@ else:
                     counts.append(count)
                     amounts.append(count * price)
 
-                headers += ["品牌推廣", "月高手獎勵", "總計"]
+                headers += ["月高手獎勵", "總計"]
                 counts += [b_count, f"轉換:{total_v}", ""]
-                amounts += [b_bonus, m_bonus, result]
+                amounts += [m_bonus, result]
                 
                 for col, text in enumerate(headers, 1):
                     cell = worksheet.cell(row=5, column=col, value=text)
