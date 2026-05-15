@@ -646,6 +646,7 @@ else:
             return total, total_v, m_bonus, l_bonus, d_bonus, u_bonus, b_bonus, b_note, r_bonus, s_bonus
 
         # 2. Excel 報表產出函數
+        # 2. Excel 報表產出函數 (橫向矩陣版)
         def generate_matrix_excel(meta_data, total_v, result, deal_dict, classes, loyalty_dict, upgrade_counts, d_bonus, l_bonus, u_bonus, m_bonus, b_bonus, b_note, emp_type, b_count, r_bonus, r_tier, si_to_st, s_bonus):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -654,7 +655,7 @@ else:
                 
                 # 樣式設定
                 bold_font = Font(bold=True, name='微軟正黑體')
-                center_align = Alignment(horizontal="center", vertical="center")
+                center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
                 thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                 
                 # 寫入基本資訊
@@ -667,58 +668,49 @@ else:
                     worksheet.cell(row=i, column=1, value=k).font = bold_font
                     worksheet.cell(row=i, column=2, value=v)
                 
-                # 定義表頭
-                header_row = 6
-                headers = ["項目", "筆數", "獎金金額", "備註"]
-                for i, h in enumerate(headers, 1):
-                    cell = worksheet.cell(row=header_row, column=i, value=h)
-                    cell.font = bold_font
-                    cell.alignment = center_align
-                    cell.border = thin_border
-                    
-                # 彙整資料清單
+                # 定義表頭 (放在第一列當作項目名稱)
+                # 我們將「項目」放在 A 欄，「筆數/級別」放在 B 欄，依此類推是不對的
+                # 橫向報表應該是：第一列是標題，第二列是數據
+                headers = ["個人業績級別", "業績獎金"]
+                values = [r_tier, r_bonus]
+                
+                # 加入體驗成交的四個明細標題與數值
                 deal_prices = {"當天": 80, "48小時": 60, "7天內": 50, "超過7天": 0}
-                data_rows = []
+                for cat, count in deal_dict.items():
+                    headers.append(f"體驗成交({cat})")
+                    values.append(count)
                 
-                # 個人業績
-                data_rows.append(["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""])
+                # 加入其他獎金大項
+                headers += ["補位筆數", "SI轉ST", "回流人數", "結構升級", "品牌推廣", "月高手獎勵", "總計獎金"]
+                values += [classes, si_to_st, sum(loyalty_dict.values()), sum(upgrade_counts.values()), b_count, m_bonus, result]
                 
-                # 體驗成交明細展開
-                for category, count in deal_dict.items():
-                    price = deal_prices.get(category, 0)
-                    bonus = count * price
-                    data_rows.append([f"體驗成交 - {category}", count, bonus, f"單價: {price}"])
+                # 寫入 Excel：第一列為標題，第二列為數值
+                header_row = 6
+                data_row = 7
                 
-                # 其他獎金大項
-                data_rows.append(["補位獎金", classes, classes * 30, ""])
-                data_rows.append(["SI 轉 ST", si_to_st, s_bonus, "超過20筆起計"])
-                data_rows.append(["回流獎金 (STP-T)", sum(loyalty_dict.values()), l_bonus, ""])
-                data_rows.append(["結構升級獎金", sum(upgrade_counts.values()), u_bonus, ""])
-                data_rows.append(["品牌知名度獎金", b_count, b_bonus, b_note])
-                data_rows.append(["月高手獎勵", f"總轉換: {total_v}", m_bonus, "達標獎勵"])
-                data_rows.append(["總計計薪", "", result, "本月預計發放"])
-                
-                # 寫入 Excel
-                current_row = header_row + 1
-                for row_data in data_rows:
-                    for col_idx, value in enumerate(row_data, 1):
-                        cell = worksheet.cell(row=current_row, column=col_idx, value=value)
-                        cell.alignment = center_align
-                        cell.border = thin_border
-                        
-                        if row_data[0] == "總計計薪":
-                            cell.font = bold_font
-                    current_row += 1
+                for col_idx, (h_text, val) in enumerate(zip(headers, values), 1):
+                    # 寫入標題格
+                    h_cell = worksheet.cell(row=header_row, column=col_idx, value=h_text)
+                    h_cell.font = bold_font
+                    h_cell.alignment = center_align
+                    h_cell.border = thin_border
                     
-                # 自動調整欄寬
-                worksheet.column_dimensions['A'].width = 25
-                worksheet.column_dimensions['B'].width = 20
-                worksheet.column_dimensions['C'].width = 15
-                worksheet.column_dimensions['D'].width = 30
-                
+                    # 寫入數據格
+                    d_cell = worksheet.cell(row=data_row, column=col_idx, value=val)
+                    d_cell.alignment = center_align
+                    d_cell.border = thin_border
+                    
+                    # 針對最後一欄「總計」加粗
+                    if h_text == "總計獎金":
+                        d_cell.font = bold_font
+                    
+                    # 自動設定欄寬 (根據標題長度)
+                    col_letter = get_column_letter(col_idx)
+                    worksheet.column_dimensions[col_letter].width = 15
+
             return output.getvalue()
 
-        # 3. Streamlit 介面渲染 (對齊 elif 層級，使用 8 個空格)
+        # 3. Streamlit 介面渲染
         st.markdown("### 基本資訊設定")
         col1, col2, col3 = st.columns(3)
         with col1: 
