@@ -666,7 +666,7 @@ else:
                 for i, h in enumerate(headers, 1):
                     worksheet.cell(row=header_row, column=i, value=h).font = bold_font
                 
-                data_rows = [
+                data_columns = [
                     ["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""],
                     ["體驗成交", sum(deal_dict.values()), d_bonus, ""],
                     ["補位獎金", classes, classes * 30, ""],
@@ -677,12 +677,24 @@ else:
                     ["月高手獎勵", total_v, m_bonus, f"總轉換筆數: {total_v}"],
                     ["總計", "", result, ""]
                 ]
-                for r_idx, row_data in enumerate(data_rows, header_row + 1):
-                    for c_idx, value in enumerate(row_data, 1):
-                        cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+                start_row = 6
+                start_col = 1
+                
+                for r_idx, h_text in enumerate(headers):
+                    cell = worksheet.cell(row=start_row + r_idx, column=start_col, value=h_text)
+                    cell.font = bold_font
+                    cell.alignment = center_align
+                    cell.border = thin_border
+                for c_idx, col_data in enumerate(data_columns, start_col + 1):
+                    for r_idx, value in enumerate(col_data):
+                        cell = worksheet.cell(row=start_row + r_idx, column=c_idx, value=value)
                         cell.alignment = center_align
                         cell.border = thin_border
-                        if r_idx == header_row + len(data_rows): cell.font = bold_font
+                        # 如果是第一列「項目」或是最後一欄「總計」，加粗字體
+                        if r_idx == 0 or c_idx == (start_col + len(data_columns)):
+                            cell.font = bold_font
+                for col in range(1, start_col + len(data_columns) + 1):
+                    worksheet.column_dimensions[get_column_letter(col)].width = 16
                 
                 worksheet.column_dimensions['A'].width = 15
                 worksheet.column_dimensions['B'].width = 15
@@ -691,7 +703,7 @@ else:
             return output.getvalue()
         
         st.markdown("### 基本資訊設定")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4 = st.columns(3)
         with col1: gym = st.selectbox("館別", ["義昌館", "高美館", "中山館", "巨蛋館"], key="gym_select")
         with col2: name = st.text_input("小編姓名", "", placeholder="請輸入姓名", key="name_input")
         with col3:
