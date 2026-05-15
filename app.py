@@ -669,7 +669,7 @@ else:
                 class_units = classes // 5  # 補位組數
                 
                 # 建立動態表頭與內容
-                headers = ["項目", "個人業績級別獎金", "體驗(當天)", "體驗(48h)", "體驗(7d)", "體驗(>7d)", "補位(組)"]
+                headers = ["項目", "個人業績級別獎金", "體驗(當天成交)", "體驗(48h)", "體驗(7d)", "體驗(>7d)", "補位人數"]
                 counts = ["內容/筆數", r_tier if r_tier else "不列入計算", deal_dict["當天"], deal_dict["48小時"], deal_dict["7天內"], deal_dict["超過7天"], class_units]
                 amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict["7天內"]*50, 0, class_units*30]
                 
@@ -683,7 +683,6 @@ else:
                 counts.append(sum(loyalty_dict.values()))
                 amounts.append(l_bonus)
                 
-                # --- 【關鍵修改】結構升級明細全部展開 ---
                 upgrade_items = [
                     ("升級(1:2變1:3)", "1對2變1對3", 100),
                     ("升級(團課變期)", "團課變期班", 150),
@@ -694,9 +693,7 @@ else:
                     count = upgrade_counts.get(key, 0)
                     counts.append(count)
                     amounts.append(count * price)
-                # --------------------------------------
 
-                # 加入剩餘項目
                 headers += ["品牌推廣", "月高手獎勵", "總計"]
                 counts += [b_count, f"轉換:{total_v}", ""]
                 amounts += [b_bonus, m_bonus, result]
@@ -720,7 +717,7 @@ else:
 
                 # 4. 自動調整欄寬
                 for col_idx in range(1, len(headers) + 1):
-                    worksheet.column_dimensions[get_column_letter(col_idx)].width = 16
+                    worksheet.column_dimensions[get_column_letter(col_idx)].width = 15
                 
             return output.getvalue()
 
