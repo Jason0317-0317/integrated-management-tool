@@ -598,7 +598,7 @@ else:
         # 1. 獎金計算核心函數
         def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier, si_to_st):
             # 體驗成交獎金：超過7天乘以0元
-            d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + deal_dict.get("超過7天", 0) * 0)
+            d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + deal_dict.get("7天內", 0) * 50 + deal_dict.get("超過7天", 0) * 0)
             
             # 2. 補位獎金：每 5 人為 1 筆筆數
             class_units = classes // 5
@@ -632,9 +632,8 @@ else:
             
             s_bonus = (((si_to_st - 20) // 5) * 200) if si_to_st >= 25 else 0
             
-            # 6. 月高手獎勵：總轉換筆數 (包含 超過7天 的筆數)
-            total_v = (sum(deal_dict.values()) + class_units + sum(loyalty_dict.values()) + 
-                       sum(upgrade_counts.values()) + brand_count + si_to_st)
+            # 6. 月高手獎勵：總轉換筆數
+            total_v = (sum(deal_dict.values()) + class_units + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count + si_to_st)
             
             if total_v >= 50: m_bonus = 5000
             elif total_v >= 30: m_bonus = 2000
@@ -664,9 +663,9 @@ else:
                 class_units = classes // 5
                 
                 # 建立橫向表頭 (包含 當天, 48h, 超過7天)
-                headers = ["項目", "個人業績級別獎金", "體驗(當天)", "體驗(48h)", "體驗(>7d)", "補位(組)", "SI轉ST", "回流人數"]
-                counts = ["內容/筆數", r_tier, deal_dict["當天"], deal_dict["48小時"], deal_dict.get("超過7天", 0), class_units, si_to_st, sum(loyalty_dict.values())]
-                amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, 0, class_units*30, s_bonus, l_bonus]
+                headers = ["項目", "個人業績級別獎金", "體驗(當天)", "體驗(48h)", "體驗(7天內)", "體驗(>7d)", "補位(組)", "SI轉ST", "回流人數"]
+                counts = ["內容/筆數", r_tier, deal_dict["當天"], deal_dict["48小時"], deal_dict.get("7天內", 0), deal_dict.get("超過7天", 0), class_units, si_to_st, sum(loyalty_dict.values())]
+                amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict.get("7天內", 0)*50, 0, class_units*30, s_bonus, l_bonus]
                 
                 # 結構升級明細
                 upgrade_items = [("升級(1:2變1:3)", "1對2變1對3", 100), ("升級(團課變期)", "團課變期班", 150), ("升級(包班成立)", "包班成立", 300)]
