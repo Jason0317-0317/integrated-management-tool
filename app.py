@@ -589,11 +589,21 @@ else:
             except Exception as e:
                 st.error(f"處理過程中發生錯誤: {e}")
 
-  # ===== 小編獎金統計 =====
+# ===== 小編獎金統計 =====
 elif st.session_state.feature == "editor_bonus":
     st.title("小編獎金統計")
     
-    # 1. 獎金計算核心函數 (已移除重複定義，保留正確計算邏輯)
+    # 【安全防護】確保 openpyxl 必要元件存在，避免產生 Excel 時噴 NameError
+    import io
+    from datetime import datetime
+    import pandas as pd
+    try:
+        from openpyxl.utils import get_column_letter
+        from openpyxl.styles import Font, Alignment, Border, Side
+    except ImportError:
+        st.error("請確保已安裝並可導入 openpyxl 模組")
+    
+    # 1. 獎金計算核心函數
     def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier, si_to_st):
         # 體驗成交獎金：包含 7天內 50元
         d_bonus = (
@@ -608,13 +618,13 @@ elif st.session_state.feature == "editor_bonus":
         c_bonus = class_units * 30
         
         # 回流與升級項目
-        l_bonus = (loyalty_dict["10堂"] * 100 + loyalty_dict["20堂"] * 200 + 
-                  loyalty_dict["30堂"] * 300 + loyalty_dict["40堂"] * 500)
+        l_bonus = (loyalty_dict.get("10堂", 0) * 100 + loyalty_dict.get("20堂", 0) * 200 + 
+                  loyalty_dict.get("30堂", 0) * 300 + loyalty_dict.get("40堂", 0) * 500)
         
         # 結構升級獎金
-        u_bonus = (upgrade_counts["1對2變1對3"] * 100 + 
-                  upgrade_counts["團課變期班"] * 150 + 
-                  upgrade_counts["包班成立"] * 300)
+        u_bonus = (upgrade_counts.get("1對2變1對3", 0) * 100 + 
+                  upgrade_counts.get("團課變期班", 0) * 150 + 
+                  upgrade_counts.get("包班成立", 0) * 300)
         
         # 品牌知名度與 SI 轉 ST 獎金
         base_val = 3
@@ -665,10 +675,10 @@ elif st.session_state.feature == "editor_bonus":
             
             class_units = classes // 5
             
-            # 【校正成功】建立橫向表頭、數量與金額，格子完全一對一對齊
+            # 建立橫向表頭、數量與金額，格子完全一對一對齊
             headers = ["項目", "個人業績級別獎金", "體驗(當天)", "體驗(48h)", "體驗(7天內)", "體驗(>7d)", "補位(組)", "SI轉ST", "回流人數"]
-            counts = ["內容/筆數", r_tier, deal_dict["當天"], deal_dict["48小時"], deal_dict.get("7天內", 0), deal_dict.get("超過7天", 0), class_units, si_to_st, sum(loyalty_dict.values())]
-            amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict.get("7天內", 0)*50, 0, class_units*30, s_bonus, l_bonus]
+            counts = ["內容/筆數", r_tier, deal_dict.get("當天", 0), deal_dict.get("48小時", 0), deal_dict.get("7天內", 0), deal_dict.get("超過7天", 0), class_units, si_to_st, sum(loyalty_dict.values())]
+            amounts = ["金額", r_bonus, deal_dict.get("當天", 0)*80, deal_dict.get("48小時", 0)*60, deal_dict.get("7天內", 0)*50, 0, class_units*30, s_bonus, l_bonus]
             
             # 結構升級明細
             upgrade_items = [("升級(1:2變1:3)", "1對2變1對3", 100), ("升級(團課變期)", "團課變期班", 150), ("升級(包班成立)", "包班成立", 300)]
@@ -714,11 +724,12 @@ elif st.session_state.feature == "editor_bonus":
             key="date_range_input"
         )
 
-    if len(date_range) == 2:
+    # 【安全防護】防止使用者在網頁上只選了起點日期、還沒選終點日期時造成的崩潰
+    if isinstance(date_range, tuple) and len(date_range) == 2:
         start_date, end_date = date_range
         date_str = f"{start_date} ~ {end_date}"
     else:
-        date_str = ""
+        date_str = f"{today.strftime('%Y-%m-%d')}" # 防錯預設值
         
     is_ft = True
     
@@ -747,7 +758,7 @@ elif st.session_state.feature == "editor_bonus":
         l_20 = st.number_input("20堂人數", min_value=0, value=0, key="loyalty_20")
         l_30 = st.number_input("30堂人數", min_value=0, value=0, key="loyalty_30")
         l_40 = st.number_input("40堂人數", min_value=0, value=0, key="loyalty_40")
-        loyalty_dict = {"10堂": l_10, "20堂": l_20, "30堂": l_30, "40堂": l_40}
+        loyalty_dict = {"10堂": l_10, "20堂": l_20, "30堂": l_40, "40堂": l_40}
     with col_d:
         st.write("結構升級次數")
         u_12_13 = st.number_input("1對2變1對3(次)", min_value=0, value=0, key="upgrade_1213")
@@ -770,6 +781,8 @@ elif st.session_state.feature == "editor_bonus":
     if st.button("產生並下載結算報表"):
         if not name or name.strip() == "": 
             st.error("請輸入小編姓名")
+        elif isinstance(date_range, tuple) and len(date_range) < 2:
+            st.error("請在基本資訊中完整點選【開始與結束】兩個日期再點擊下載")
         else:
             meta = {"館別": gym, "小編姓名": name, "報表日期": date_str}
             excel_file = generate_matrix_excel(
@@ -777,10 +790,12 @@ elif st.session_state.feature == "editor_bonus":
                 res[4], res[3], res[5], res[2], res[6], res[7], "小編",
                 brand_input, res[8], revenue_tier, si_to_st_input, res[9]
             )
+            
+            safe_date_str = date_str.replace(" ~ ", "_").replace("/", "-")
             st.download_button(
                 label="點我儲存 Excel 檔案",
                 data=excel_file,
-                file_name=f"{name}_獎金結算_{date_str}.xlsx",
+                file_name=f"{name}_獎金結算_{safe_date_str}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
     # ===== 教練薪資結算系統 =====
