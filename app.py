@@ -600,6 +600,7 @@ else:
                       deal_dict["7天內"] * 50 + deal_dict["超過7天"] * 0)
             
             # 2. 補位獎金：每滿 5 人發 30 元
+            class_units = classes // 5
             c_bonus = (classes // 5) * 30
             
             # 回流獎金
@@ -633,7 +634,8 @@ else:
                 s_bonus = 0
             
             # 月高手獎勵
-            total_v = (sum(deal_dict.values()) + classes + sum(loyalty_dict.values()) + sum(upgrade_counts.values()) + brand_count + si_to_st)
+            total_v = (sum(deal_dict.values()) + class_units + sum(loyalty_dict.values()) + 
+                       sum(upgrade_counts.values()) + brand_count + si_to_st)
             if total_v >= 50: m_bonus = 5000
             elif total_v >= 30: m_bonus = 2000
             else: m_bonus = 0
@@ -685,6 +687,7 @@ else:
                     "總計"
                 ]
                 
+                class_units = classes // 5
                 # 第二行：筆數、級別或轉換內容 (對應 Row 6)
                 counts = [
                     "內容/筆數", 
@@ -693,7 +696,7 @@ else:
                     deal_dict["48小時"], 
                     deal_dict["7天內"], 
                     deal_dict["超過7天"],
-                    classes, 
+                    class_units, 
                     si_to_st, 
                     sum(loyalty_dict.values()), 
                     sum(upgrade_counts.values()), 
@@ -710,7 +713,7 @@ else:
                     deal_dict["48小時"] * 60,
                     deal_dict["7天內"] * 50,
                     deal_dict["超過7天"] * 0,
-                    (classes // 5) * 30,
+                    class_units * 30,
                     s_bonus,
                     l_bonus,
                     u_bonus,
