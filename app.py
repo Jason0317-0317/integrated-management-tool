@@ -660,8 +660,15 @@ else:
                 for i, (k, v) in enumerate(info, 1):
                     worksheet.cell(row=i, column=1, value=k).font = bold_font
                     worksheet.cell(row=i, column=2, value=v)
+                deal_prices = {"當天": 80, "48小時": 60, "7天內": 50, "超過7天": 0}
+                data_rows = []
+                data_rows.append(["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""])
+                for category, count in deal_dict.items():
+                    price = deal_prices.get(category, 0)
+                    bonus = count * price
+                    data_rows.append([f"體驗成交 - {category}", count, bonus, f"單價: {price}"])
                 
-                header_row = 7
+                header_row = 6
                 headers = ["項目", "筆數", "獎金金額", "備註"]
                 for i, h in enumerate(headers, 1):
                     worksheet.cell(row=header_row, column=i, value=h).font = bold_font
@@ -691,15 +698,15 @@ else:
                         cell.alignment = center_align
                         cell.border = thin_border
                         # 如果是第一列「項目」或是最後一欄「總計」，加粗字體
-                        if r_idx == 0 or c_idx == (start_col + len(data_columns)):
+                        if r_idx == len(data_rows) or c_idx == 1:
                             cell.font = bold_font
                 for col in range(1, start_col + len(data_columns) + 1):
                     worksheet.column_dimensions[get_column_letter(col)].width = 16
                 
-                worksheet.column_dimensions['A'].width = 15
+                worksheet.column_dimensions['A'].width = 25
                 worksheet.column_dimensions['B'].width = 15
                 worksheet.column_dimensions['C'].width = 15
-                worksheet.column_dimensions['D'].width = 20
+                worksheet.column_dimensions['D'].width = 25
             return output.getvalue()
         
         st.markdown("### 基本資訊設定")
