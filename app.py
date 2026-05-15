@@ -671,7 +671,12 @@ else:
                 header_row = 6
                 headers = ["項目", "筆數", "獎金金額", "備註"]
                 for i, h in enumerate(headers, 1):
+                    cell = worksheet.cell(row=header_row, column=i, value=h)
+                    cell.font = bold_font
+                    cell.alignment = center_align
+                    cell.border = thin_border
                     worksheet.cell(row=header_row, column=i, value=h).font = bold_font
+            
                 
                 data_columns = [
                     ["個人業績獎金", r_tier if r_tier else "不列入計算", r_bonus, ""],
