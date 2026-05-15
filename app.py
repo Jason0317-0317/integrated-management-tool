@@ -596,8 +596,7 @@ else:
         # 1. 獎金計算核心函數
         def calculate_bonus(deal_dict, classes, loyalty_dict, upgrade_counts, is_ft, brand_count, revenue_tier, si_to_st):
             # 體驗成交獎金
-            d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + 
-                      deal_dict["7天內"] * 50 + deal_dict["超過7天"] * 0)
+            d_bonus = (deal_dict["當天"] * 80 + deal_dict["48小時"] * 60 + deal_dict["超過7天"] * 0)
             
             # 2. 補位獎金：每滿 5 人發 30 元
             class_units = classes // 5
@@ -669,8 +668,8 @@ else:
                 class_units = classes // 5  # 補位組數
                 
                 # 建立動態表頭與內容
-                headers = ["項目", "個人業績級別獎金", "體驗(當天成交)", "體驗(48h)", "體驗(7d)", "體驗(>7d)", "補位人數"]
-                counts = ["內容/筆數", r_tier if r_tier else "不列入計算", deal_dict["當天"], deal_dict["48小時"], deal_dict["7天內"], deal_dict["超過7天"], class_units]
+                headers = ["項目", "個人業績級別獎金", "體驗(當天成交)", "體驗(48h)", "體驗(7d)", "補位人數"]
+                counts = ["內容/筆數", r_tier if r_tier else "不列入計算", deal_dict["當天"], deal_dict["48小時"], deal_dict["超過7天"], class_units]
                 amounts = ["金額", r_bonus, deal_dict["當天"]*80, deal_dict["48小時"]*60, deal_dict["7天內"]*50, 0, class_units*30]
                 
                 # 加入 SI轉ST
